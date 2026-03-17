@@ -1,0 +1,25 @@
+# Bỏ qua các thư mục sinh ra khi build
+build/
+Binaries/
+Archives/
+
+# Bỏ qua các file cấu hình cũ của ESP-IDF
+sdkconfig.old
+sdkconfig.ci
+
+# Bỏ qua các file cấu hình môi trường IDE (Eclipse / VS Code)
+.settings/
+.metadata/
+.cproject
+.project
+.vscode/
+
+# Bỏ qua các file cấu hình Linter/Formatter (clang)
+.clangd/
+.clang-format
+.clang-tidy
+compile_commands.json
+
+# Bỏ qua các file rác của hệ điều hành
+.DS_Store
+Thumbs.db

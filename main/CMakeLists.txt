@@ -1,0 +1,10 @@
+idf_component_register(SRCS "main.cpp"
+                            "../_src/hal_timer_pwm.cpp"
+                            "../_src/i2c_mpu_debug.cpp"
+                            "../_src/pid_control.cpp"
+                            "../_src/telemetry.cpp"
+                            "../_src/xx_mpu_complementary_filter.cpp"
+                            "../_src/xx_mpu_data_fusion.cpp"
+                            "../_src/button.cpp"
+                            "../_src/led.cpp"
+                       INCLUDE_DIRS "." "../_src")
