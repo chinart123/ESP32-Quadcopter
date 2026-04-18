@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Drone CPU Budget Calculator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: auto; background: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .bar-container { height: 40px; width: 100%; background: #eee; border-radius: 5px; overflow: hidden; display: flex; margin: 20px 0; border: 1px solid #ccc; }
+        .segment { height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; transition: width 0.3s; }
+        .i2c { background: #e74c3c; } .calc { background: #f1c40f; color: #333; } .free { background: #2ecc71; }
+        .error { background: #000 !important; width: 100% !important; }
+        .math-box { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; font-family: monospace; }
+        .warning { color: #c0392b; font-weight: bold; display: none; }
+        input, select { width: 100%; margin-bottom: 10px; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Dự toán Ngân sách CPU Quadcopter</h2>
+        
+        <label>Tần số vòng lặp (Hz): <span id="val-freq">500</span></label>
+        <input type="range" id="freq" min="100" max="2000" value="500">
+
+        <label>Tốc độ I2C (kHz):</label>
+        <select id="i2c">
+            <option value="100">100 (Standard)</option>
+            <option value="400" selected>400 (Fast Mode)</option>
+            <option value="1000">1000 (Fast Plus)</option>
+        </select>
+
+        <label>Xung nhịp CPU (MHz):</label>
+        <select id="cpu">
+            <option value="72">72 (STM32F1)</option>
+            <option value="168">168 (STM32F4)</option>
+            <option value="240" selected>240 (ESP32-S3)</option>
+        </select>
+
+        <div id="warn" class="warning">⚠️ CẢNH BÁO: Vượt quá giới hạn thời gian thực! Hệ thống sẽ Crash.</div>
+
+        <div class="bar-container" id="bar">
+            <div id="p-i2c" class="segment i2c">I2C</div>
+            <div id="p-calc" class="segment calc">PID</div>
+            <div id="p-free" class="segment free">Rảnh</div>
+        </div>
+
+        <div class="math-box" id="math">
+            </div>
+
+        <h4>Giải nghĩa Thuật ngữ:</h4>
+        <ul>
+            <li><strong>Loop Time (dt):</strong> Thời gian tối đa cho 1 vòng lặp.</li>
+            <li><strong>I2C Time:</strong> Thời gian chờ phần cứng truyền dữ liệu.</li>
+            <li><strong>Calc Time:</strong> Thời gian CPU thực thi mã lệnh toán học.</li>
+        </ul>
+    </div>
+
+    <script>
+        const inputs = ['freq', 'i2c', 'cpu'];
+        function update() {
+            const f = parseInt(document.getElementById('freq').value);
+            const i2c_v = parseInt(document.getElementById('i2c').value);
+            const cpu_v = parseInt(document.getElementById('cpu').value);
+            document.getElementById('val-freq').innerText = f;
+
+            const dt = 1000 / f;
+            const t_i2c = (14 * 9 / i2c_v) + 0.15;
+            const t_calc = (150000 / (cpu_v * 1000000)) * 1000; // Giả định 150k instructions
+
+            const p_i2c = (t_i2c / dt) * 100;
+            const p_calc = (t_calc / dt) * 100;
+            const p_free = 100 - p_i2c - p_calc;
+
+            document.getElementById('p-i2c').style.width = p_i2c + '%';
+            document.getElementById('p-calc').style.width = p_calc + '%';
+            document.getElementById('p-free').style.width = (p_free > 0 ? p_free : 0) + '%';
+            document.getElementById('p-free').innerText = p_free > 0 ? 'Rảnh ' + Math.round(p_free) + '%' : '';
+
+            const isCrash = p_free <= 0;
+            document.getElementById('warn').style.display = isCrash ? 'block' : 'none';
+            document.getElementById('bar').classList.toggle('error', isCrash);
+
+            document.getElementById('math').innerHTML = `
+            1. Loop Time = 1000 / ${f}Hz = ${dt.toFixed(3)}ms<br>
+            2. I2C Time  = (14*9 / ${i2c_v}) + 0.15 = ${t_i2c.toFixed(3)}ms<br>
+            3. PID Time  = (150k / ${cpu_v}MHz) = ${t_calc.toFixed(3)}ms<br>
+            -----------------------------------------<br>
+            => Budget Còn Lại: ${(dt - t_i2c - t_calc).toFixed(3)}ms
+            `;
+        }
+        inputs.forEach(id => document.getElementById(id).addEventListener('input', update));
+        update();
+    </script>
+</body>
+</html>
