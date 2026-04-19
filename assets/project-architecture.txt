@@ -1,0 +1,68 @@
+# CẤU TRÚC HỆ THỐNG THƯ MỤC: DUAL-PLATFORM QUADCOPTER
+
+📦 STM32_Quadcopter_Legacy_Project
+ ┣ 📂 1_Docs_and_Reports               <-- (Tài liệu báo cáo đồ án)
+ ┃ ┗ 📜 1_M1Report_Template_updated2024.docx
+ ┣ 📂 assets                           <-- (Sơ đồ mạch và hình ảnh minh họa lỗi)
+ ┃ ┣ 🖼️ Fail-Diagram.png
+ ┃ ┣ 🖼️ PASS-DIAGRAM.png
+ ┃ ┗ 🖼️ cách-đấu-dây-fail.png
+ ┣ 📂 Logs_and_Debug                   <-- (Nhật ký phân tích lỗi động cơ & MOSFET)
+ ┃ ┣ 📜 Stage_10-Release-Test_1_motor_Bug_note.md
+ ┃ ┣ 📜 Stage10_HW_Measurement_Test_Log.md
+ ┃ ┣ 📜 Stage_10.5-Motor_Hardware_Master_Document.md
+ ┃ ┗ 📜 Stage-11-Refactor-Circuits.md
+ ┣ 📂 Old Core_Files                   <-- (Thư viện I2C cũ xử lý Blocking)
+ ┃ ┣ 📜 i2c_mpu_debug.h
+ ┃ ┗ 📜 i2c_mpu_debug.c               <-- (Chặn CPU bằng timeout t--)
+ ┣ 📂 docs                             <-- (Tài liệu kỹ thuật STM32)
+ ┣ 📂 include                          <-- (Header files của HAL)
+ ┃ ┣ 📜 drn_main_board_choose.h
+ ┃ ┣ 📜 drn_time.h
+ ┃ ┣ 📜 drn_button.h
+ ┃ ┣ 📜 drn_motor_pwm.h
+ ┃ ┗ 📜 drn_timer_pwm.h
+ ┣ 📂 src                              <-- (Source files của HAL)
+   ┣ 📜 drn_main_board_choose.c
+   ┣ 📜 drn_time.c                     <-- (Đếm SysTick 1ms)
+   ┣ 📜 drn_button.c
+   ┣ 📜 drn_motor_pwm.c
+   ┗ 📜 drn_timer_pwm.c                <-- (Cấu hình TIM3 500Hz/4kHz)
+ ┣ .gitignore
+ ┗ README.md
+
+📦 ESP32_S3_Quadcopter_RTOS_Project
+ ┣ 📂 1_Docs_and_Reports               <-- (Tài liệu báo cáo đồ án)
+ ┃ ┗ 📜 1_M1Report_Template_updated2024.docx
+ ┣ 📂 assets                           <-- (Công cụ tính toán & Sơ đồ kiến trúc mới)
+ ┃ ┣ 🌐 drone_budget.html
+ ┃ ┣ 🌐 drone_budget-v2.html
+ ┃ ┗ 🖼️ ESP32-S3-DualCore-Architecture.png
+ ┣ 📂 Logs_and_Debug                   <-- (Nhật ký phát triển RTOS)
+ ┃ ┣ 📜 Design_Analysis_Log.md
+ ┃ ┗ 📜 PWM_16kHz_Thermal_Report.md
+ ┣ 📂 Old Core_Files                   <-- (Lưu trữ code cũ để tham khảo refactor)
+ ┃ ┗ 📜 old_esp32_mpu_i2c_v1.c
+ ┣ 📂 docs                             <-- (Tài liệu lý thuyết RTOS)
+ ┃ ┣ 📜 Lý thuyết Ngắt (Interrupt) trên ESP32-S3 & FreeRTOS.md
+ ┃ ┣ 📜 Thông số Lấy mẫu & Cấu hình MPU6500.md
+ ┃ ┗ 📜 Tổng hợp_Kiến_trúc_Lõi_Kép.md
+ ┣ 📂 include                          <-- (Header files dùng cho ESP-IDF)
+ ┃ ┣ 📜 drn_main_board_choose.h
+ ┃ ┣ 📜 drn_time.h
+ ┃ ┣ 📜 drn_button.h
+ ┃ ┣ 📜 drn_motor_pwm.h
+ ┃ ┗ 📜 drn_timer_pwm.h
+ ┣ 📂 src                              <-- (Source files & ESP-IDF Components)
+ ┃ ┣ 📜 drn_main_board_choose.cpp
+ ┃ ┣ 📜 drn_time.cpp                     <-- (FreeRTOS Tick/esp_timer)
+ ┃ ┣ 📜 drn_button.cpp
+ ┃ ┣ 📜 drn_motor_pwm.cpp
+ ┃ ┗ 📜 drn_timer_pwm.cpp                <-- (Cấu hình LEDC 16kHz)
+ ┣ 📜 CMakeLists.txt                   <-- (Project-level: Khởi tạo dự án ESP-IDF)
+ ┣ 📜 sdkconfig                        <-- (Cấu hình CONFIG_ cho RTOS, Clock 240MHz...)
+ ┣ 📂 main                             <-- (Thư mục ứng dụng chính)
+   ┣ 📜 CMakeLists.txt                 <-- (Component-level: Đăng ký source code)
+   ┗ 📜 main.cpp                       <-- (Entry point: Khởi tạo Task điều khiển bay)
+ ┣ .gitignore
+ ┗ README.md
