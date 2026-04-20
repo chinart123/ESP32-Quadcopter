@@ -1,10 +1,23 @@
-idf_component_register(SRCS "main.cpp"
-                            "../_src/hal_timer_pwm.cpp"
-                            "../_src/i2c_mpu_debug.cpp"
-                            "../_src/pid_control.cpp"
-                            "../_src/telemetry.cpp"
-                            "../_src/xx_mpu_complementary_filter.cpp"
-                            "../_src/xx_mpu_data_fusion.cpp"
-                            "../_src/button.cpp"
-                            "../_src/led.cpp"
-                       INCLUDE_DIRS "." "../_src")
+# ============================================================
+# Component: main
+# Description: Main application component for Windify Quadcopter
+# Target: ESP32-S3 (ESP-IDF v5.x)
+# ============================================================
+idf_component_register(
+    SRCS
+        "main.cpp"
+        "../src/drn_main_board_choose.cpp"
+        "../src/drn_time.cpp"
+        "../src/drn_button.cpp"
+        "../src/drn_timer_pwm.cpp"
+        "../src/drn_motor_pwm.cpp"
+    INCLUDE_DIRS
+        "."
+        "../include"
+    REQUIRES
+        driver
+        freertos
+        esp_timer
+)
+# Optional: Add compile definitions or flags for this component
+# target_compile_definitions(${COMPONENT_LIB} PRIVATE "-DDEBUG_LEVEL=3")
