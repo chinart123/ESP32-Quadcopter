@@ -51,12 +51,14 @@
  ┃ ┣ 📜 drn_main_board_choose.h
  ┃ ┣ 📜 drn_time.h
  ┃ ┣ 📜 drn_button.h
+ ┃ ┣ 📜 drn_mpu6050.h
  ┃ ┣ 📜 drn_motor_pwm.h
  ┃ ┗ 📜 drn_timer_pwm.h
  ┣ 📂 src                              <-- (Source files & ESP-IDF Components)
  ┃ ┣ 📜 drn_main_board_choose.cpp
  ┃ ┣ 📜 drn_time.cpp                     <-- (FreeRTOS Tick/esp_timer)
  ┃ ┣ 📜 drn_button.cpp
+ ┃ ┣ 📜 drn_mpu6050.cpp
  ┃ ┣ 📜 drn_motor_pwm.cpp
  ┃ ┗ 📜 drn_timer_pwm.cpp                <-- (Cấu hình LEDC 16kHz)
  ┣ 📜 CMakeLists.txt                   <-- (Project-level: Khởi tạo dự án ESP-IDF)
@@ -64,5 +66,23 @@
  ┣ 📂 main                             <-- (Thư mục ứng dụng chính)
    ┣ 📜 CMakeLists.txt                 <-- (Component-level: Đăng ký source code)
    ┗ 📜 main.cpp                       <-- (Entry point: Khởi tạo Task điều khiển bay)
+ ┣ 📂 Arduino_IDE/
+ ┃ ┗ 📂 ESP32_Quadcopter/                   # Tên thư mục = tên file .ino
+ ┃    ┣ 📜 ESP32_Quadcopter.ino             # Entry point (setup/loop)
+ ┃    ┣ 📂 src/                             # Symbolic link hoặc copy tới ../src/
+ ┃    ┃  ┣ 🔗 drn_main_board_choose.cpp -> ../../../src/drn_main_board_choose.cpp
+ ┃    ┃  ┣ 🔗 drn_time.cpp                 -> ../../../src/drn_time.cpp
+ ┃    ┃  ┣ 🔗 drn_button.cpp               -> ../../../src/drn_button.cpp
+ ┃    ┃  ┣ 🔗 drn_mpu6050.cpp               -> ../../../src/drn_mpu6050.cpp
+ ┃    ┃  ┣ 🔗 drn_timer_pwm.cpp            -> ../../../src/drn_timer_pwm.cpp
+ ┃    ┃  ┗ 🔗 drn_motor_pwm.cpp            -> ../../../src/drn_motor_pwm.cpp
+ ┃    ┣ 📂 include/                         # Symbolic link tới ../include/
+ ┃    ┃  ┣ 🔗 drn_main_board_choose.h      -> ../../../include/drn_main_board_choose.h
+ ┃    ┃  ┣ 🔗 drn_time.h                   -> ../../../include/drn_time.h
+ ┃    ┃  ┣ 🔗 drn_button.h                 -> ../../../include/drn_button.h
+ ┃    ┃  ┣ 🔗 drn_mpu6050.h                 -> ../../../include/drn_mpu6050.h
+ ┃    ┃  ┣ 🔗 drn_timer_pwm.h              -> ../../../include/drn_timer_pwm.h
+ ┃    ┃  ┗ 🔗 drn_motor_pwm.h              -> ../../../include/drn_motor_pwm.h
+ ┃    ┗ 📂 libraries/                       # (Tuỳ chọn) Thư viện bổ sung cho Arduino
  ┣ .gitignore
  ┗ README.md
