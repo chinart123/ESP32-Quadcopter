@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USART1 Telemetry Pipeline</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .pipeline-container {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            max-width: 1200px;
+        }
+        .title-box {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .title-box h1 {
+            color: #0f172a;
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .title-box p {
+            color: #64748b;
+            margin: 0;
+            font-size: 16px;
+        }
+        .flow-wrapper {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .stage-card {
+            flex: 1;
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            min-width: 160px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            transition: transform 0.2s;
+        }
+        .stage-card:hover {
+            transform: translateY(-5px);
+            border-color: #3b82f6;
+            box-shadow: 0 10px 15px rgba(59, 130, 246, 0.1);
+        }
+        .stage-header {
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 14px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .stage-card:nth-child(1) .stage-header { background: #e0f2fe; color: #0284c7; border-bottom-color: #bae6fd; }
+        .stage-card:nth-child(3) .stage-header { background: #fef9c3; color: #ca8a04; border-bottom-color: #fef08a; }
+        .stage-card:nth-child(5) .stage-header { background: #f3e8ff; color: #9333ea; border-bottom-color: #e9d5ff; }
+        .stage-card:nth-child(7) .stage-header { background: #fee2e2; color: #dc2626; border-bottom-color: #fecaca; }
+        .stage-card:nth-child(9) .stage-header { background: #dcfce7; color: #16a34a; border-bottom-color: #bbf7d0; }
+
+        .stage-content {
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.6;
+            text-align: left;
+        }
+        .stage-content ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+        .stage-content li {
+            margin-bottom: 6px;
+        }
+        .arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .highlight {
+            color: #0f172a;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="pipeline-container">
+    <div class="title-box">
+        <h1>Project Windify: USART1 Telemetry Pipeline</h1>
+        <p>Data flow from MPU6050 sensor to PC Ground Station (STM32F103 Single-Core Architecture)</p>
+    </div>
+
+    <div class="flow-wrapper">
+        <div class="stage-card">
+            <div class="stage-header">1. INPUT SENSOR</div>
+            <div class="stage-content">
+                <ul>
+                    <li><span class="highlight">MPU6050</span> (IMU)</li>
+                    <li>6-DOF Raw Data</li>
+                    <li>Hardware Address: <code>0x68</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="arrow">➔</div>
+
+        <div class="stage-card">
+            <div class="stage-header">2. DATA ACQUISITION</div>
+            <div class="stage-content">
+                <ul>
+                    <li><span class="highlight">STM32 I2C1 Bus</span></li>
+                    <li>400 kHz Fast Mode</li>
+                    <li>Single-core blocking read</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="arrow">➔</div>
+
+        <div class="stage-card">
+            <div class="stage-header">3. FIRMWARE LOGIC</div>
+            <div class="stage-content">
+                <ul>
+                    <li><span class="highlight">Sensor Fusion</span></li>
+                    <li>Complementary Filter</li>
+                    <li>Format to CSV: <i>roll, pitch, yaw, pwm, i2c_bps</i></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="arrow">➔</div>
+
+        <div class="stage-card">
+            <div class="stage-header">4. TRANSMISSION</div>
+            <div class="stage-content">
+                <ul>
+                    <li><span class="highlight">USART1 (PA9 TX)</span></li>
+                    <li>115200 Baud Rate</li>
+                    <li><code>fputc</code> retargeted</li>
+                    <li>5 Hz Packet Rate</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="arrow">➔</div>
+
+        <div class="stage-card">
+            <div class="stage-header">5. GROUND STATION</div>
+            <div class="stage-content">
+                <ul>
+                    <li><span class="highlight">PC Terminal</span></li>
+                    <li>Hercules Software</li>
+                    <li>Live data display</li>
+                    <li>Excel <code>.csv</code> log analysis</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

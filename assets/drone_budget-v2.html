@@ -58,9 +58,7 @@
             text-transform: uppercase;
         }
 
-        .cpu-status span b {
-            color: var(--text-main);
-        }
+        .cpu-status span b { color: var(--text-main); }
 
         .cards-grid {
             display: grid;
@@ -100,13 +98,8 @@
             font-weight: 700;
         }
 
-        .usage-value {
-            color: var(--success-green);
-        }
-
-        .usage-critical {
-            color: var(--danger-red);
-        }
+        .usage-value { color: var(--success-green); }
+        .usage-critical { color: var(--danger-red); }
 
         .progress-container {
             height: 60px;
@@ -171,9 +164,7 @@
             justify-content: space-between;
         }
 
-        input[type=range] {
-            width: 100%;
-        }
+        input[type=range] { width: 100%; }
 
         select, button {
             padding: 8px;
@@ -191,8 +182,18 @@
             transition: background 0.3s;
         }
 
-        .reset-btn:hover {
-            background: #d9d9d9;
+        .reset-btn:hover { background: #d9d9d9; }
+
+        .hardware-badge {
+            display: inline-block;
+            background: #e6f7ff;
+            color: #096dd9;
+            border: 1px solid #91d5ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 5px;
+            vertical-align: middle;
         }
 
         .footer-notes {
@@ -213,8 +214,8 @@
         <div class="cpu-status">
             <span>CPU: <b id="display-cpu">ESP32-S3</b></span>
             <span>Clock: <b id="display-mhz">240 MHz</b></span>
-            <span>Period: <b id="display-period">2.00 ms</b></span>
-            <span>CPI: <b id="display-cpi">1.5</b></span>
+            <span>Loop Period: <b id="display-period">2.00 ms</b></span>
+            <span>PWM Freq: <b id="display-pwm">16000 Hz</b></span>
         </div>
     </div>
 
@@ -234,7 +235,7 @@
                     <span class="metric-value" id="current-math">19</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-label">USAGE (%)</span>
+                    <span class="metric-label">CPU USAGE (%)</span>
                     <span class="metric-value usage-value" id="current-usage">19.2</span>
                 </div>
             </div>
@@ -243,7 +244,7 @@
                 <div id="current-bar-i2c" class="progress-segment segment-i2c" style="width: 18%">I2C</div>
                 <div id="current-bar-math" class="progress-segment segment-math" style="width: 1.2%">MATH</div>
             </div>
-            <div id="current-warning" class="warning-box">⚠️ SYSTEM OVERLOADED</div>
+            <div id="current-warning" class="warning-box">⚠️ CPU OVERLOADED</div>
             <div class="card-footer-label">Current Configuration</div>
         </div>
 
@@ -262,7 +263,7 @@
                     <span class="metric-value" id="target-math">41</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-label">USAGE (%)</span>
+                    <span class="metric-label">CPU USAGE (%)</span>
                     <span class="metric-value usage-value" id="target-usage">31.5</span>
                 </div>
             </div>
@@ -271,7 +272,7 @@
                 <div id="target-bar-i2c" class="progress-segment segment-i2c" style="width: 29%">I2C</div>
                 <div id="target-bar-math" class="progress-segment segment-math" style="width: 2.5%">MATH</div>
             </div>
-            <div id="target-warning" class="warning-box">⚠️ SYSTEM OVERLOADED</div>
+            <div id="target-warning" class="warning-box">⚠️ CPU OVERLOADED</div>
             <div class="card-footer-label">Future Projection</div>
         </div>
     </div>
@@ -284,11 +285,12 @@
                 <option value="stm32">STM32F103 (72MHz, Soft-float)</option>
             </select>
         </div>
-        <div class="control-group">
-            <label class="control-label">Frequency (Hz) <b id="val-freq">500</b></label>
-            <input type="range" id="input-freq" min="100" max="1000" value="500">
-        </div>
         
+        <div class="control-group">
+            <label class="control-label">Control Loop (Hz) <b id="val-loop-freq">500</b></label>
+            <input type="range" id="input-loop-freq" min="100" max="1000" step="50" value="500">
+        </div>
+
         <div class="control-group">
             <label class="control-label">Current Payload (Bytes) <b id="val-current-p">14</b></label>
             <input type="range" id="input-current-p" min="1" max="100" value="14">
@@ -306,6 +308,14 @@
             <label class="control-label">Future Instructions <b id="val-target-i">6500</b></label>
             <input type="range" id="input-target-i" min="1000" max="20000" step="500" value="6500">
         </div>
+        
+        <div class="control-group" style="grid-column: span 2; padding-top: 10px; border-top: 1px solid #eee;">
+            <label class="control-label">
+                <span>Motor PWM Freq (Hz) <span class="hardware-badge">Hardware LEDC (0% CPU)</span></span>
+                <b id="val-pwm-freq">16000</b>
+            </label>
+            <input type="range" id="input-pwm-freq" min="1000" max="32000" step="1000" value="16000">
+        </div>
 
         <button class="reset-btn" id="reset-btn">RESTORE DEFAULTS</button>
     </div>
@@ -314,15 +324,16 @@
         <p><b>Notes:</b></p>
         <p>* Formula: I2C Load (µs) = (Bytes * 9) / 0.4. (Where: 9 = 8 data bits + 1 ACK bit; 0.4 = 400kHz Bus)</p>
         <p>* Formula: Math Load = (Instructions * CPI) / Clock Speed (MHz).</p>
+        <p>* <b>Hardware PWM:</b> Motor PWM is generated via hardware peripherals (like ESP32 LEDC) and does not consume the main CPU control loop budget.</p>
         <p id="pending-label">* Pending Integration Payload: 10 bytes.</p>
-        <p>* Note: Future projection anticipates integrating an additional 10 bytes of sensor data.</p>
     </div>
 </div>
 
 <script>
     const state = {
         cpu: 'esp32',
-        freq: 500,
+        loopFreq: 500, // Tần số vòng lặp phần mềm (Quyết định CPU Usage)
+        pwmFreq: 16000, // Tần số băm xung phần cứng
         currentP: 14,
         currentI: 3000,
         targetP: 24,
@@ -336,13 +347,14 @@
 
     function update() {
         const cpuData = config[state.cpu];
-        const loopMs = 1000 / state.freq;
+        // Tính toán CPU budget dực trên Control Loop Frequency
+        const loopMs = 1000 / state.loopFreq; 
         const loopUs = loopMs * 1000;
 
         document.getElementById('display-cpu').innerText = cpuData.name;
         document.getElementById('display-mhz').innerText = cpuData.mhz + ' MHz';
         document.getElementById('display-period').innerText = loopMs.toFixed(2) + ' ms';
-        document.getElementById('display-cpi').innerText = cpuData.cpi;
+        document.getElementById('display-pwm').innerText = state.pwmFreq + ' Hz';
 
         // Current
         const currentI2cUs = (state.currentP * 9) / 0.4 + 50;
@@ -356,6 +368,7 @@
         const targetTotalUs = targetI2cUs + targetMathUs;
         const targetUsage = (targetTotalUs / loopUs) * 100;
 
+        // Update DOM
         document.getElementById('current-loop').innerText = loopMs.toFixed(2);
         document.getElementById('current-i2c').innerText = Math.round(currentI2cUs);
         document.getElementById('current-math').innerText = Math.round(currentMathUs);
@@ -368,15 +381,16 @@
         document.getElementById('target-usage').innerText = targetUsage.toFixed(1);
         document.getElementById('target-usage').className = targetUsage > 100 ? 'metric-value usage-critical' : 'metric-value usage-value';
 
-        document.getElementById('current-bar-i2c').style.width = (currentI2cUs / loopUs * 100) + '%';
-        document.getElementById('current-bar-math').style.width = (currentMathUs / loopUs * 100) + '%';
+        document.getElementById('current-bar-i2c').style.width = Math.min((currentI2cUs / loopUs * 100), 100) + '%';
+        document.getElementById('current-bar-math').style.width = Math.min((currentMathUs / loopUs * 100), 100) + '%';
         document.getElementById('current-warning').style.display = currentUsage > 100 ? 'block' : 'none';
 
-        document.getElementById('target-bar-i2c').style.width = (targetI2cUs / loopUs * 100) + '%';
-        document.getElementById('target-bar-math').style.width = (targetMathUs / loopUs * 100) + '%';
+        document.getElementById('target-bar-i2c').style.width = Math.min((targetI2cUs / loopUs * 100), 100) + '%';
+        document.getElementById('target-bar-math').style.width = Math.min((targetMathUs / loopUs * 100), 100) + '%';
         document.getElementById('target-warning').style.display = targetUsage > 100 ? 'block' : 'none';
 
-        document.getElementById('val-freq').innerText = state.freq;
+        document.getElementById('val-loop-freq').innerText = state.loopFreq;
+        document.getElementById('val-pwm-freq').innerText = state.pwmFreq;
         document.getElementById('val-current-p').innerText = state.currentP;
         document.getElementById('val-current-i').innerText = state.currentI;
         document.getElementById('val-target-p').innerText = state.targetP;
@@ -386,8 +400,10 @@
         document.getElementById('pending-label').innerText = `* Pending Integration Payload: ${pending > 0 ? pending : 0} bytes.`;
     }
 
+    // Event Listeners
     document.getElementById('input-cpu').addEventListener('change', (e) => { state.cpu = e.target.value; update(); });
-    document.getElementById('input-freq').addEventListener('input', (e) => { state.freq = parseInt(e.target.value); update(); });
+    document.getElementById('input-loop-freq').addEventListener('input', (e) => { state.loopFreq = parseInt(e.target.value); update(); });
+    document.getElementById('input-pwm-freq').addEventListener('input', (e) => { state.pwmFreq = parseInt(e.target.value); update(); });
     document.getElementById('input-current-p').addEventListener('input', (e) => { state.currentP = parseInt(e.target.value); update(); });
     document.getElementById('input-current-i').addEventListener('input', (e) => { state.currentI = parseInt(e.target.value); update(); });
     document.getElementById('input-target-p').addEventListener('input', (e) => { state.targetP = parseInt(e.target.value); update(); });
@@ -395,14 +411,16 @@
 
     document.getElementById('reset-btn').addEventListener('click', () => {
         state.cpu = 'esp32';
-        state.freq = 500;
+        state.loopFreq = 500;
+        state.pwmFreq = 16000;
         state.currentP = 14;
         state.currentI = 3000;
         state.targetP = 24;
         state.targetI = 6500;
         
         document.getElementById('input-cpu').value = 'esp32';
-        document.getElementById('input-freq').value = 500;
+        document.getElementById('input-loop-freq').value = 500;
+        document.getElementById('input-pwm-freq').value = 16000;
         document.getElementById('input-current-p').value = 14;
         document.getElementById('input-current-i').value = 3000;
         document.getElementById('input-target-p').value = 24;

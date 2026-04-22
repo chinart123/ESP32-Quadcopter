@@ -51,6 +51,7 @@
  ┃ ┣ 📜 drn_main_board_choose.h
  ┃ ┣ 📜 drn_time.h
  ┃ ┣ 📜 drn_button.h
+ ┃ ┣ 📜 drn_raw_mpu6050.h
  ┃ ┣ 📜 drn_mpu6050.h
  ┃ ┣ 📜 drn_motor_pwm.h
  ┃ ┗ 📜 drn_timer_pwm.h
@@ -58,6 +59,7 @@
  ┃ ┣ 📜 drn_main_board_choose.cpp
  ┃ ┣ 📜 drn_time.cpp                     <-- (FreeRTOS Tick/esp_timer)
  ┃ ┣ 📜 drn_button.cpp
+ ┃ ┣ 📜 drn_raw_mpu6050.cpp
  ┃ ┣ 📜 drn_mpu6050.cpp
  ┃ ┣ 📜 drn_motor_pwm.cpp
  ┃ ┗ 📜 drn_timer_pwm.cpp                <-- (Cấu hình LEDC 16kHz)
@@ -73,6 +75,7 @@
  ┃    ┃  ┣ 🔗 drn_main_board_choose.cpp -> ../../../src/drn_main_board_choose.cpp
  ┃    ┃  ┣ 🔗 drn_time.cpp                 -> ../../../src/drn_time.cpp
  ┃    ┃  ┣ 🔗 drn_button.cpp               -> ../../../src/drn_button.cpp
+ ┃    ┃  ┣ 🔗 drn_raw_mpu6050.cpp               -> ../../../src/drn_raw_mpu6050.cpp
  ┃    ┃  ┣ 🔗 drn_mpu6050.cpp               -> ../../../src/drn_mpu6050.cpp
  ┃    ┃  ┣ 🔗 drn_timer_pwm.cpp            -> ../../../src/drn_timer_pwm.cpp
  ┃    ┃  ┗ 🔗 drn_motor_pwm.cpp            -> ../../../src/drn_motor_pwm.cpp
@@ -80,6 +83,7 @@
  ┃    ┃  ┣ 🔗 drn_main_board_choose.h      -> ../../../include/drn_main_board_choose.h
  ┃    ┃  ┣ 🔗 drn_time.h                   -> ../../../include/drn_time.h
  ┃    ┃  ┣ 🔗 drn_button.h                 -> ../../../include/drn_button.h
+ ┃    ┃  ┣ 🔗 drn_raw_mpu6050.h                 -> ../../../include/drn_raw_mpu6050.h
  ┃    ┃  ┣ 🔗 drn_mpu6050.h                 -> ../../../include/drn_mpu6050.h
  ┃    ┃  ┣ 🔗 drn_timer_pwm.h              -> ../../../include/drn_timer_pwm.h
  ┃    ┃  ┗ 🔗 drn_motor_pwm.h              -> ../../../include/drn_motor_pwm.h

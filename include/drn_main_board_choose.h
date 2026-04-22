@@ -30,6 +30,7 @@
 #include "drn_motor_pwm.h"
 #include "drn_button.h"
 #include "drn_mpu6050.h"   
+#include "drn_raw_mpu6050.h"
 
 #ifdef __cplusplus
 extern "C" {
