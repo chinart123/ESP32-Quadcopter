@@ -27,10 +27,9 @@ void drn_main_board_choose_Init(void) {
     DRN_Time_Init();
     DRN_Motor_PWM_Init();
     DRN_Button_Init();
-	// XÓA dòng DRN_MPU6050_Init() độc lập cũ đi.
-    // CHỈ DÙNG 1 block lệnh này để khởi tạo và calibrate:
-    if (DRN_MPU6050_Init() == ESP_OK) {
-        DRN_MPU6050_Calibrate(); 
+    // Thay thế block MPU6050 cũ bằng bản raw:
+    if (DRN_RawMPU6050_Init() == ESP_OK) {
+        DRN_RawMPU6050_Calibrate(); 
     }
 }
 

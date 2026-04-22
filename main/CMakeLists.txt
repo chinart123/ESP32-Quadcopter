@@ -9,6 +9,7 @@ idf_component_register(
         "../src/drn_main_board_choose.cpp"
         "../src/drn_time.cpp"
         "../src/drn_button.cpp"
+        "../src/drn_raw_mpu6050.cpp"
         "../src/drn_mpu6050.cpp"
         "../src/drn_timer_pwm.cpp"
         "../src/drn_motor_pwm.cpp"

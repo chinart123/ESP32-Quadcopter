@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yaw Drift Simulator - Project Windify</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #1e1e1e; 
+            color: #fff; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .dashboard { 
+            display: flex; 
+            flex-direction: row; 
+            gap: 40px; 
+            background: #2a2a2a; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
+        .canvas-container { 
+            position: relative; 
+            width: 320px; 
+            height: 320px; 
+            background: #333; 
+            border-radius: 50%; 
+            border: 4px solid #555; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        /* Compass Markers */
+        .compass-marks { 
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+        }
+        .compass-marks .n { 
+            position: absolute; 
+            top: 10px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            color: #f44336; /* Red for North */
+            font-weight: bold; 
+            font-size: 20px;
+        }
+        .compass-marks .e { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #aaa; font-weight: bold; }
+        .compass-marks .s { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: #aaa; font-weight: bold; }
+        .compass-marks .w { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; font-weight: bold; }
+        
+        /* Drone Object */
+        .drone-wrapper {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+        }
+        .drone-arm-1 { 
+            position: absolute; 
+            background: #4caf50; 
+            width: 160px; 
+            height: 12px; 
+            top: 74px; 
+            left: 0; 
+            border-radius: 6px; 
+        }
+        .drone-arm-2 { 
+            position: absolute; 
+            background: #2196f3; 
+            width: 160px; 
+            height: 12px; 
+            top: 74px; 
+            left: 0; 
+            border-radius: 6px; 
+            transform: rotate(90deg);
+        }
+        .drone-center {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border-radius: 50%;
+            top: 60px;
+            left: 60px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .drone-front-indicator { 
+            position: absolute; 
+            width: 16px; 
+            height: 16px; 
+            background: #f44336; 
+            border-radius: 50%; 
+            top: -5px; 
+            left: 12px; 
+        }
+
+        /* Control Panel */
+        .panel { display: flex; flex-direction: column; gap: 15px; min-width: 300px; }
+        .stat-box { background: #1a1a1a; padding: 15px; border-radius: 8px; border-left: 5px solid #2196f3; }
+        .stat-box.orange { border-color: #ff9800; }
+        .stat-val { font-size: 28px; font-family: monospace; font-weight: bold; color: #4caf50; margin-top: 5px; }
+        .stat-val.orange { color: #ff9800; }
+        .controls { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; border-top: 1px solid #444; padding-top: 20px; }
+        label { font-size: 14px; color: #ccc; display: flex; flex-direction: column; gap: 8px;}
+        input[type="range"] { accent-color: #4caf50; }
+        button { padding: 12px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s;}
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="canvas-container">
+            <div class="compass-marks">
+                <div class="n">N</div>
+                <div class="e">E</div>
+                <div class="s">S</div>
+                <div class="w">W</div>
+            </div>
+            
+            <div class="drone-wrapper" id="droneObj">
+                <div class="drone-arm-1"></div>
+                <div class="drone-arm-2"></div>
+                <div class="drone-center">
+                    <div class="drone-front-indicator"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2 style="margin: 0; color: #fff;">IMU Yaw Drift</h2>
+            <p style="margin: 0; font-size: 13px; color: #888;">Quadcopter is sitting still. No absolute heading reference.</p>
+            
+            <div class="stat-box">
+                <div style="font-size: 14px; color: #aaa;">Calculated Yaw (Deg)</div>
+                <div class="stat-val" id="valYaw">0.00°</div>
+            </div>
+            
+            <div class="stat-box orange">
+                <div style="font-size: 14px; color: #aaa;">Measured Gz (DPS)</div>
+                <div class="stat-val orange" id="valGz">0.00</div>
+            </div>
+
+            <div class="controls">
+                <label>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Hardware Bias Offset:</span>
+                        <span id="valBias" style="color: #fff; font-weight: bold;">0.30</span>
+                    </div>
+                    <input type="range" id="sliderBias" min="-2" max="2" step="0.05" value="0.30">
+                </label>
+                
+                <label>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Vibration Noise Amplitude:</span>
+                        <span id="valNoiseAmp" style="color: #fff; font-weight: bold;">0.50</span>
+                    </div>
+                    <input type="range" id="sliderNoise" min="0" max="3" step="0.1" value="0.5">
+                </label>
+                
+                <button onclick="resetYaw()">Reset Heading to 0°</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Physics variables
+        let currentYaw = 0.0;
+        let lastTimestamp = performance.now();
+        
+        // DOM Elements
+        const droneEl = document.getElementById('droneObj');
+        const displayYaw = document.getElementById('valYaw');
+        const displayGz = document.getElementById('valGz');
+        const sliderNoise = document.getElementById('sliderNoise');
+        const displayNoise = document.getElementById('valNoiseAmp');
+        const sliderBias = document.getElementById('sliderBias');
+        const displayBias = document.getElementById('valBias');
+
+        // Event Listeners for UI
+        sliderNoise.addEventListener('input', (e) => {
+            displayNoise.innerText = parseFloat(e.target.value).toFixed(2);
+        });
+        
+        sliderBias.addEventListener('input', (e) => {
+            displayBias.innerText = parseFloat(e.target.value).toFixed(2);
+        });
+
+        function resetYaw() { 
+            currentYaw = 0.0; 
+        }
+
+        // Main Loop (Runs 60 times a second)
+        function integrationLoop(timestamp) {
+            // Calculate delta time in seconds
+            let dt = (timestamp - lastTimestamp) / 1000.0; 
+            lastTimestamp = timestamp;
+            
+            // Physical truth: drone is not moving
+            let gz_true = 0.0; 
+            let gz_measured = 0.0;
+
+            // Get parameters from sliders
+            let bias = parseFloat(sliderBias.value);
+            let noiseAmp = parseFloat(sliderNoise.value);
+            
+            // Generate random noise (-noiseAmp to +noiseAmp)
+            let noise = (Math.random() * 2 - 1) * noiseAmp; 
+            
+            // Simulate MPU6050 reading
+            gz_measured = gz_true + bias + noise;
+
+            // Integration Step: Yaw = Yaw + Gz * dt
+            currentYaw += (gz_measured * dt);
+
+            // Update UI Rotation
+            droneEl.style.transform = `rotate(${currentYaw}deg)`;
+            
+            // Format numbers nicely
+            displayYaw.innerText = currentYaw.toFixed(2) + '°';
+            displayGz.innerText = gz_measured.toFixed(2);
+
+            // Loop again
+            requestAnimationFrame(integrationLoop);
+        }
+
+        // Start Loop
+        requestAnimationFrame(integrationLoop);
+    </script>
+</body>
+</html>
