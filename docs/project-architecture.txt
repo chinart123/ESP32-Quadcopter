@@ -1,6 +1,8 @@
 # CẤU TRÚC HỆ THỐNG THƯ MỤC: DUAL-PLATFORM QUADCOPTER
 
-📦 STM32_Quadcopter_Legacy_Project
+====================================================================
+📦 1. STM32_Quadcopter_Legacy_Project (Cấu trúc cũ dự tính - Trước khi Refactor)
+====================================================================
  ┣ 📂 1_Docs_and_Reports               <-- (Tài liệu báo cáo đồ án)
  ┃ ┗ 📜 1_M1Report_Template_updated2024.docx
  ┣ 📂 assets                           <-- (Sơ đồ mạch và hình ảnh minh họa lỗi)
@@ -14,7 +16,7 @@
  ┃ ┗ 📜 Stage-11-Refactor-Circuits.md
  ┣ 📂 Old Core_Files                   <-- (Thư viện I2C cũ xử lý Blocking)
  ┃ ┣ 📜 i2c_mpu_debug.h
- ┃ ┗ 📜 i2c_mpu_debug.c               <-- (Chặn CPU bằng timeout t--)
+ ┃ ┗ 📜 i2c_mpu_debug.c                <-- (Chặn CPU bằng timeout t--)
  ┣ 📂 docs                             <-- (Tài liệu kỹ thuật STM32)
  ┣ 📂 include                          <-- (Header files của HAL)
  ┃ ┣ 📜 drn_main_board_choose.h
@@ -23,13 +25,53 @@
  ┃ ┣ 📜 drn_motor_pwm.h
  ┃ ┗ 📜 drn_timer_pwm.h
  ┣ 📂 src                              <-- (Source files của HAL)
-   ┣ 📜 drn_main_board_choose.c
-   ┣ 📜 drn_time.c                     <-- (Đếm SysTick 1ms)
-   ┣ 📜 drn_button.c
-   ┣ 📜 drn_motor_pwm.c
-   ┗ 📜 drn_timer_pwm.c                <-- (Cấu hình TIM3 500Hz/4kHz)
- ┣ .gitignore
- ┗ README.md
+ ┃ ┣ 📜 drn_main_board_choose.c
+ ┃ ┣ 📜 drn_time.c                     <-- (Đếm SysTick 1ms)
+ ┃ ┣ 📜 drn_button.c
+ ┃ ┣ 📜 drn_motor_pwm.c
+ ┃ ┗ 📜 drn_timer_pwm.c                <-- (Cấu hình TIM3 500Hz/4kHz)
+ ┣ 📜 .gitignore
+ ┗ 📜 README.md
+
+====================================================================
+📦 2. STM32_Quadcopter_BareMetal (Cấu trúc hiện tại - Chuẩn Zero-Config)
+====================================================================
+ ┣ 📂 1_Docs_and_Reports               <-- (Tài liệu báo cáo đồ án)
+ ┃ ┗ 📜 1_M1Report_Template_updated2024.docx
+ ┣ 📂 assets                           <-- (Sơ đồ mạch và hình ảnh minh họa lỗi)
+ ┃ ┣ 🖼️ Fail-Diagram.png
+ ┃ ┣ 🖼️ PASS-DIAGRAM.png
+ ┃ ┗ 🖼️ cách-đấu-dây-fail.png
+ ┣ 📂 Logs_and_Debug                   <-- (Nhật ký phân tích lỗi động cơ & MOSFET)
+ ┃ ┣ 📜 Stage_10-Release-Test_1_motor_Bug_note.md
+ ┃ ┣ 📜 Stage10_HW_Measurement_Test_Log.md
+ ┃ ┣ 📜 Stage_10.5-Motor_Hardware_Master_Document.md
+ ┃ ┗ 📜 Stage-11-Refactor-Circuits.md
+ ┣ 📂 docs                             <-- (Tài liệu kỹ thuật STM32)
+ ┃
+ ┣ 📂 Old_Core_Files                   <-- (Nơi phong ấn các file Legacy/Blocking thế hệ 1)
+ ┃ ┣ 📜 button.c / .h                  <-- (Thế hệ 1 - Đã được thay bởi drn_button)
+ ┃ ┣ 📜 main_board_choose.c / .h       <-- (Thế hệ 1 - Đã được thay bởi drn_main_board_choose)
+ ┃ ┗ 📜 i2c_mpu_debug.c / .h           <-- (I2C Polling cũ, gây nghẽn CPU)
+ ┃
+ ┣ 📂 include                          <-- (Header files ĐANG ACTIVE)
+ ┃ ┣ 📜 hal_timer_pwm.h                <-- (BẮT BUỘC GIỮ LẠI: Định nghĩa TIM3 PWM)
+ ┃ ┣ 📜 drn_button.h
+ ┃ ┣ 📜 xx_mpu_data_fusion.h           
+ ┃ ┗ ... (các file .h khác)
+ ┃
+ ┣ 📂 src                              <-- (Source files ĐANG ACTIVE)
+ ┃ ┣ 📜 hal_timer_pwm.c                <-- (BẮT BUỘC GIỮ LẠI: Được pid_control.c gọi)
+ ┃ ┣ 📜 main.c
+ ┃ ┣ 📜 pid_control.c
+ ┃ ┣ 📜 drn_button.c
+ ┃ ┣ 📜 xx_mpu_data_fusion.c           <-- (Tạm thời giữ ở đây để build qua, chờ Giai đoạn 2)
+ ┃ ┗ ... (các file .c khác)
+ ┃
+ ┣ 📜 stm32f10x.h                      <-- (File CMSIS do Keil RTE quản lý, KHÔNG DI CHUYỂN)
+ ┣ 📜 .gitignore                       <-- (Chứa cấu hình loại bỏ thư mục rác Objects/ Listings/)
+ ┣ 📜 STM32_Quadcopter.uvprojx         <-- (Đã được Script tự động update đường dẫn)
+ ┗ 📜 README.md
 
 📦 ESP32_S3_Quadcopter_RTOS_Project
  ┣ 📂 1_Docs_and_Reports               <-- (Tài liệu báo cáo đồ án)
