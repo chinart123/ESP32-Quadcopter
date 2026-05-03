@@ -1,0 +1,459 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.dash{padding:1rem;display:flex;flex-direction:column;gap:10px;font-family:var(--font-sans);font-size:13px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:.9rem}
+.sec{font-size:10px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+/* sliders */
+.ctrl-row{display:flex;flex-direction:column;gap:3px;margin-bottom:9px}
+.ctrl-hd{display:flex;justify-content:space-between;align-items:center}
+.ctrl-name{font-size:12px;color:var(--color-text-secondary);font-weight:500}
+.ctrl-v{font-size:12px;font-family:var(--font-mono);font-weight:500;color:var(--color-text-primary);min-width:32px;text-align:right}
+.ctrl-hint{font-size:10px;color:var(--color-text-tertiary);line-height:1.45;margin-top:2px}
+.alpha-row{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:.5px solid var(--color-border-tertiary);margin-top:2px}
+/* data cells */
+.data-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.dc{border-radius:8px;padding:7px 9px;cursor:help;position:relative;transition:background .5s, border-color .5s}
+.dc .dn{font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px}
+.dc .dv{font-size:14px;font-weight:500;font-family:var(--font-mono);transition:color .5s}
+.dc .dbar{height:3px;border-radius:2px;margin-top:5px;transition:width .4s,background .5s}
+/* tooltip */
+.tip{display:none;position:absolute;z-index:99;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--color-background-primary);border:.5px solid var(--color-border-secondary);border-radius:8px;padding:8px 10px;width:200px;font-size:11px;line-height:1.5;color:var(--color-text-secondary);box-shadow:0 4px 16px rgba(0,0,0,.15);pointer-events:none}
+.dc:hover .tip{display:block}
+/* status */
+.status-box{border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;border:.5px solid;transition:background .5s,border-color .5s}
+.s-row{display:flex;align-items:center;gap:8px}
+.s-icon{font-size:20px;line-height:1}
+.s-title{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.s-desc{font-size:11px;color:var(--color-text-secondary);line-height:1.55}
+/* log */
+.log-wrap{height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding-right:2px}
+.log-wrap::-webkit-scrollbar{width:3px}
+.log-wrap::-webkit-scrollbar-thumb{background:var(--color-border-secondary);border-radius:3px}
+.log-entry{border-radius:6px;padding:5px 8px;font-size:11px;line-height:1.45;display:flex;gap:7px;align-items:flex-start;border-left:3px solid}
+.log-entry .lt{font-family:var(--font-mono);font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;margin-top:.5px}
+.log-entry .lm{color:var(--color-text-secondary)}
+.log-ok{background:#EAF3DE;border-color:#1D9E75}
+.log-ok .lm{color:#3B6D11}
+.log-warn{background:#FAEEDA;border-color:#EF9F27}
+.log-warn .lm{color:#854F0B}
+.log-err{background:#FCEBEB;border-color:#E24B4A}
+.log-err .lm{color:#A32D2D}
+/* chart */
+.chart-wrap{width:100%;height:160px}
+canvas.chart{width:100%;height:100%;display:block;border-radius:6px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.leg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--color-text-secondary)}
+.ldot{width:10px;height:3px;border-radius:2px}
+/* badge & btn */
+.badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.badge.run{background:#EAF3DE;color:#3B6D11}
+.badge.stop{background:#FAECE7;color:#993C1D}
+.topbar{display:flex;justify-content:space-between;align-items:center}
+canvas.drone3d{width:100%;height:180px;display:block;border-radius:8px}
+</style>
+
+<div class="dash">
+<div class="topbar" style="margin-bottom:2px">
+  <span style="font-size:12px;font-weight:500;color:var(--color-text-secondary)">MPU6050 — Drone IMU (Edu Mode)</span>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span class="badge run" id="badge">● live</span>
+    <button id="play-btn" onclick="toggleSim()">Dừng</button>
+  </div>
+</div>
+
+<div class="row2">
+  <!-- LEFT: 3D + status -->
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div class="card" style="padding-bottom:.75rem">
+      <div class="sec">Mô hình 3D drone</div>
+      <canvas class="drone3d" id="drone3d"></canvas>
+    </div>
+    <div class="status-box" id="status-box" style="background:#EAF3DE;border-color:#5DCAA5">
+      <div class="s-row"><span class="s-icon" id="s-icon">✦</span><span class="s-title" id="s-title">Ổn định</span></div>
+      <div class="s-desc" id="s-desc">Drone đang hover bình thường.</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: controls + cells -->
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div class="card">
+      <div class="sec">Điều chỉnh môi trường</div>
+      <div class="ctrl-row">
+        <div class="ctrl-hd"><span class="ctrl-name">🔊 Rung động cơ</span><span class="ctrl-v" id="vib-val">1.5</span></div>
+        <input type="range" min="0" max="5" step="0.1" value="1.5" id="vib-slider" oninput="document.getElementById('vib-val').textContent=parseFloat(this.value).toFixed(1)">
+        <span class="ctrl-hint">Càng cao → accel càng bị nhiễu loạn → đường đỏ run mạnh hơn</span>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-hd"><span class="ctrl-name">🌡 Trôi gyro</span><span class="ctrl-v" id="drift-val">0.10</span></div>
+        <input type="range" min="-0.5" max="0.5" step="0.01" value="0.1" id="drift-slider" oninput="document.getElementById('drift-val').textContent=parseFloat(this.value).toFixed(2)">
+        <span class="ctrl-hint">Gyro "nói dối" dần → drone nghĩ mình đang nghiêng trong khi không</span>
+      </div>
+      <div class="alpha-row">
+        <span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">⚖ Tin gyro bao nhiêu (α):</span>
+        <input type="range" min="0.80" max="0.99" step="0.01" value="0.98" id="alpha-slider" style="flex:1" oninput="alphaVal=parseFloat(this.value);document.getElementById('alpha-val').textContent=alphaVal.toFixed(2)">
+        <span class="ctrl-v" id="alpha-val">0.98</span>
+      </div>
+      <div class="ctrl-hint" style="margin-top:4px">α=0.99 → tin gyro 99%, rất mượt nhưng dễ trôi. α=0.80 → tin accel 20%, chính xác hơn nhưng dễ bị rung</div>
+    </div>
+
+    <div class="card">
+      <div class="sec">Dữ liệu cảm biến — hover để hiểu từng ô</div>
+      <div class="data-grid" id="data-grid">
+
+        <div class="dc" id="dc-ax" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary)">
+          <div class="dn">Ax — gia tốc trái/phải</div>
+          <div class="dv" id="w-ax">0.000</div>
+          <div class="dbar" id="bar-ax" style="width:50%;background:#B4B2A9"></div>
+          <div class="tip"><b>Ax</b> — Gia tốc theo trục X (trái/phải).<br>Drone đang cân bằng nên ≈0. Khi nghiêng trái/phải mới có giá trị lớn.</div>
+        </div>
+
+        <div class="dc" id="dc-ay" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary)">
+          <div class="dn">Ay — gia tốc trước/sau</div>
+          <div class="dv" id="w-ay">0.000</div>
+          <div class="dbar" id="bar-ay" style="width:50%;background:#B4B2A9"></div>
+          <div class="tip"><b>Ay</b> — Gia tốc trục Y (tiến/lùi).<br>Số nhỏ và ngẫu nhiên = nhiễu điện tử bình thường của chip.</div>
+        </div>
+
+        <div class="dc" id="dc-az" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary)">
+          <div class="dn">Az — trọng lực (≈1g)</div>
+          <div class="dv" id="w-az">1.000</div>
+          <div class="dbar" id="bar-az" style="width:50%;background:#B4B2A9"></div>
+          <div class="tip"><b>Az</b> — Gia tốc trục Z (trọng lực).<br>Luôn ≈1.0g khi bay bằng (Trái Đất kéo xuống). Khi nghiêng → giảm dần về 0.</div>
+        </div>
+
+        <div class="dc" id="dc-gx" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary)">
+          <div class="dn">Gx — xoay trái/phải</div>
+          <div class="dv" id="w-gx">0.00</div>
+          <div class="dbar" id="bar-gx" style="width:50%;background:#B4B2A9"></div>
+          <div class="tip"><b>Gx</b> — Tốc độ xoay quanh trục X (roll rate).<br>Nhiễu nhỏ ±2°/s là bình thường. Tăng khi drone bắt đầu lật nghiêng.</div>
+        </div>
+
+        <div class="dc" id="dc-gy" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary)">
+          <div class="dn">Gy — tốc độ nghiêng</div>
+          <div class="dv" id="w-gy">0.00</div>
+          <div class="dbar" id="bar-gy" style="width:50%;background:#EF9F27"></div>
+          <div class="tip"><b>Gy</b> — Tốc độ nghiêng trước/sau (°/s).<br>Đây là số gyro đo được. Nếu "Trôi gyro" cao → số này bị cộng thêm sai số → tích phân ra góc pitch sai.</div>
+        </div>
+
+        <div class="dc" id="dc-gz" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary)">
+          <div class="dn">Gz — xoay yaw</div>
+          <div class="dv" id="w-gz">0.00</div>
+          <div class="dbar" id="bar-gz" style="width:50%;background:#B4B2A9"></div>
+          <div class="tip"><b>Gz</b> — Tốc độ xoay quanh trục đứng (yaw rate).<br>Drone đang không xoay trái/phải nên ≈0.</div>
+        </div>
+
+        <div class="dc" id="dc-accel" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary)">
+          <div class="dn">Pitch (accel thô)</div>
+          <div class="dv" id="w-ap">0.00°</div>
+          <div class="dbar" id="bar-ap" style="width:50%;background:#E24B4A"></div>
+          <div class="tip"><b>Pitch accel</b> — Góc nghiêng tính từ gia tốc kế.<br>Chính xác về dài hạn nhưng run loạn khi động cơ rung. Tăng "Rung động cơ" để thấy nó điên loạn.</div>
+        </div>
+
+        <div class="dc" id="dc-pitch" style="background:#E1F5EE;border:1.5px solid #5DCAA5">
+          <div class="dn">Pitch (đã lọc ✓)</div>
+          <div class="dv" id="w-pitch" style="color:#1D9E75">0.00°</div>
+          <div class="dbar" id="bar-pitch" style="width:50%;background:#1D9E75"></div>
+          <div class="tip"><b>Pitch lọc</b> — Góc nghiêng sau bộ lọc complementary.<br>Kết hợp gyro (mượt) + accel (chính xác). Đây là số drone thực sự dùng để giữ thăng bằng!</div>
+        </div>
+
+        <div class="dc" id="dc-gyro" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary)">
+          <div class="dn">Pitch (gyro thô)</div>
+          <div class="dv" id="w-gpitch">0.00°</div>
+          <div class="dbar" id="bar-gp" style="width:50%;background:#EF9F27"></div>
+          <div class="tip"><b>Pitch gyro</b> — Góc nghiêng tính từ gyro (tích phân Gy).<br>Mượt nhưng trôi xa dần. Tăng "Trôi gyro" để thấy nó lạc hướng ra ngoài ±120°.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Log panel -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div class="sec" style="margin:0">📋 Nhật ký sự kiện — giải thích tại sao drone thay đổi trạng thái</div>
+    <button onclick="clearLog()" style="font-size:10px;padding:2px 8px">Xoá</button>
+  </div>
+  <div class="log-wrap" id="log-wrap"></div>
+</div>
+
+<!-- Chart -->
+<div class="card" style="padding-bottom:.75rem">
+  <div class="sec">Góc pitch theo thời gian thực</div>
+  <div class="chart-wrap"><canvas class="chart" id="chart"></canvas></div>
+  <div class="legend">
+    <div class="leg"><div class="ldot" style="background:#E24B4A"></div>Accel (nhiễu)</div>
+    <div class="leg"><div class="ldot" style="background:#EF9F27"></div>Gyro (trôi)</div>
+    <div class="leg"><div class="ldot" style="background:#1D9E75"></div>Filtered ✓</div>
+    <div class="leg"><div class="ldot" style="background:#B4B2A9;opacity:.5"></div>Thực tế</div>
+  </div>
+</div>
+</div>
+
+<script>
+const chartEl=document.getElementById('chart');
+const ctx=chartEl.getContext('2d');
+const c3d=document.getElementById('drone3d');
+const cx=c3d.getContext('2d');
+let isRunning=true,time=0,alphaVal=0.98;
+const dt=0.016;
+let curGyro=0,curFilter=0;
+const N=180;
+const hist={actual:[],accel:[],gyro:[],filter:[]};
+let lastStatus='',logCount=0,lastLogTime=0;
+let lastVib=1.5,lastDrift=0.1,lastAlpha=0.98;
+
+function resize(){
+  [chartEl,c3d].forEach(cv=>{
+    const r=cv.getBoundingClientRect();
+    cv.width=r.width*devicePixelRatio;
+    cv.height=r.height*devicePixelRatio;
+  });
+}
+resize();
+
+// ── CELL COLOR based on magnitude ──────────────────────────────────
+const cellDefs={
+  ax:{label:'Ax',range:1},ay:{label:'Ay',range:0.2},az:{label:'Az',range:1},
+  gx:{label:'Gx',range:5},gy:{label:'Gy',range:40},gz:{label:'Gz',range:5},
+  accel:{label:'Accel pitch',range:40},pitch:{label:'Pitch filtered',range:40},gyro:{label:'Gyro pitch',range:120}
+};
+
+function setCellColor(id,val,range){
+  const cell=document.getElementById('dc-'+id);
+  const bar=document.getElementById('bar-'+( id==='accel'?'ap':id==='gyro'?'gp':id));
+  if(!cell||!bar)return;
+  const ratio=Math.min(Math.abs(val)/range,1);
+  const pct=Math.round(ratio*100);
+  // intensity → color
+  let bg,bc,tc,barC;
+  if(id==='pitch'){bg='#E1F5EE';bc='#5DCAA5';tc='#1D9E75';barC='#1D9E75';}
+  else if(ratio<0.15){bg='var(--color-background-secondary)';bc='var(--color-border-tertiary)';tc='var(--color-text-primary)';barC='#B4B2A9';}
+  else if(ratio<0.45){
+    barC=id==='gy'||id==='gyro'?'#EF9F27':id==='accel'?'#E24B4A':'#85B7EB';
+    bg=id==='gy'||id==='gyro'?'#FAEEDA':id==='accel'?'#FCEBEB':'#E6F1FB';
+    bc=id==='gy'||id==='gyro'?'#FAC775':id==='accel'?'#F09595':'#85B7EB';
+    tc=id==='gy'||id==='gyro'?'#854F0B':id==='accel'?'#A32D2D':'#0C447C';
+  } else {
+    barC=id==='gy'||id==='gyro'?'#EF9F27':id==='accel'?'#E24B4A':'#378ADD';
+    bg=id==='gy'||id==='gyro'?'#FAC775':id==='accel'?'#F7C1C1':'#B5D4F4';
+    bc=id==='gy'||id==='gyro'?'#BA7517':id==='accel'?'#E24B4A':'#185FA5';
+    tc=id==='gy'||id==='gyro'?'#633806':id==='accel'?'#791F1F':'#042C53';
+  }
+  cell.style.background=bg;
+  cell.style.borderColor=bc;
+  const dv=cell.querySelector('.dv');
+  if(dv&&id!=='pitch')dv.style.color=tc;
+  bar.style.width=(25+pct*0.75)+'%';
+  bar.style.background=barC;
+}
+
+// ── LOG ────────────────────────────────────────────────────────────
+function addLog(msg,type='ok'){
+  const now=performance.now();
+  if(now-lastLogTime<1800)return;
+  lastLogTime=now;
+  const wrap=document.getElementById('log-wrap');
+  logCount++;
+  const t=String(Math.floor(time)).padStart(3,'0')+'s';
+  const entry=document.createElement('div');
+  entry.className='log-entry log-'+type;
+  entry.innerHTML=`<span class="lt">${t}</span><span class="lm">${msg}</span>`;
+  wrap.prepend(entry);
+  while(wrap.children.length>30)wrap.removeChild(wrap.lastChild);
+}
+
+function clearLog(){document.getElementById('log-wrap').innerHTML='';}
+
+// ── STATUS + LOG logic ─────────────────────────────────────────────
+function updateStatus(pitch,vib,drift,alpha){
+  const box=document.getElementById('status-box');
+  const abs=Math.abs(pitch);
+  let bg,bc,ic,ti,de,logMsg,logType;
+
+  if(vib>3.5&&Math.abs(drift)>0.25){
+    bg='#FCEBEB';bc='#E24B4A';ic='✕';ti='Nguy hiểm — cảm biến kép lỗi';
+    de='Cả accel lẫn gyro đều đang báo sai. Bộ lọc không còn đủ thông tin đáng tin cậy. Trong thực tế drone sẽ mất kiểm soát.';
+    logMsg=`⚠ NGUY HIỂM: Rung động cơ ${vib.toFixed(1)}× làm accel mù, gyro trôi ${drift.toFixed(2)} làm pitch sai. Bộ lọc tê liệt!`;logType='err';
+  } else if(vib>3.5){
+    bg='#FAECE7';bc='#EF9F27';ic='⚠';ti='Rung quá mạnh — accel mù';
+    de=`Động cơ rung ${vib.toFixed(1)}× khiến accel không đọc được góc thực. Bộ lọc đang dựa vào gyro ${(alpha*100).toFixed(0)}% — nếu gyro cũng trôi thì hỏng.`;
+    logMsg=`Rung động cơ lên ${vib.toFixed(1)}×. Accel bị nhiễu nặng → ô "Accel pitch" nhảy loạn. Bộ lọc phải dựa vào gyro nhiều hơn.`;logType='warn';
+  } else if(Math.abs(drift)>0.25){
+    bg='#FAEEDA';bc='#FAC775';ic='↻';ti='Gyro đang trôi dần';
+    de=`Chip MEMS bị lệch nhiệt (drift=${drift.toFixed(2)}). Gyro tích lũy sai số → "Pitch gyro" lạc xa thực tế. Accel đang hiệu chỉnh lại qua ${((1-alpha)*100).toFixed(0)}%.`;
+    logMsg=`Gyro drift=${drift.toFixed(2)} → "Pitch gyro" đang trôi xa. Accel còn hiệu chỉnh ${((1-alpha)*100).toFixed(0)}% — nhưng nếu rung thêm thì không bù được nữa.`;logType='warn';
+  } else if(abs>15){
+    bg='#E6F1FB';bc='#85B7EB';ic='↗';ti=`Nghiêng ${pitch.toFixed(1)}° — đang di chuyển`;
+    de=`Drone nghiêng ${pitch.toFixed(1)}°. Lực đẩy động cơ lệch sang ngang → drone bay tiến/lùi. Hoàn toàn bình thường và được kiểm soát.`;
+    logMsg=`Góc pitch đạt ${pitch.toFixed(1)}° — drone đang di chuyển về phía trước. Accel và gyro đồng thuận tốt.`;logType='ok';
+  } else if(abs<3){
+    bg='#EAF3DE';bc='#5DCAA5';ic='✦';ti='Ổn định — hover';
+    de=`Góc pitch ≈ ${pitch.toFixed(1)}°. Drone đang bay tại chỗ. Bộ lọc hoạt động tốt, gyro và accel đồng thuận trong ngưỡng cho phép.`;
+    logMsg=null;
+  } else {
+    bg='#E1F5EE';bc='#9FE1CB';ic='◈';ti=`Điều chỉnh nhẹ ${pitch.toFixed(1)}°`;
+    de=`Drone đang trong pha chuyển tiếp. Bộ lọc đang cân bằng gyro (${(alpha*100).toFixed(0)}%) và accel (${((1-alpha)*100).toFixed(0)}%).`;
+    logMsg=null;
+  }
+
+  box.style.background=bg;box.style.borderColor=bc;
+  document.getElementById('s-icon').textContent=ic;
+  document.getElementById('s-title').textContent=ti;
+  document.getElementById('s-desc').textContent=de;
+
+  // log on change or meaningful event
+  if(logMsg&&(ti!==lastStatus)){addLog(logMsg,logType);lastStatus=ti;}
+
+  // log slider changes
+  const vib2=parseFloat(document.getElementById('vib-slider').value);
+  const dr2=parseFloat(document.getElementById('drift-slider').value);
+  const al2=parseFloat(document.getElementById('alpha-slider').value);
+  if(Math.abs(vib2-lastVib)>=0.5){
+    addLog(`Rung động cơ thay đổi → ${vib2.toFixed(1)}×. ${vib2>3?'Accel đang bị nhiễu nặng — ô đỏ đậm lên.':'Mức rung bình thường, accel còn đọc được.'}`,vib2>3?'warn':'ok');
+    lastVib=vib2;
+  }
+  if(Math.abs(dr2-lastDrift)>=0.1){
+    addLog(`Gyro drift thay đổi → ${dr2.toFixed(2)}. ${Math.abs(dr2)>0.2?'Gyro bắt đầu lạc hướng — ô vàng đậm lên, pitch gyro sẽ trôi ra ngoài.':'Drift nhỏ, accel bù được.'}`,Math.abs(dr2)>0.2?'warn':'ok');
+    lastDrift=dr2;
+  }
+  if(Math.abs(al2-lastAlpha)>=0.03){
+    addLog(`Hệ số α thay đổi → ${al2.toFixed(2)}. ${al2>0.95?'Tin gyro nhiều → mượt nhưng nếu drift cao sẽ trôi.':'Tin accel nhiều hơn → ít trôi nhưng nhạy với rung.'}`,  'ok');
+    lastAlpha=al2;
+  }
+}
+
+// ── 3D DRONE ──────────────────────────────────────────────────────
+function drawDrone3D(pitch){
+  const W=c3d.width/devicePixelRatio,H=c3d.height/devicePixelRatio;
+  cx.save();cx.scale(devicePixelRatio,devicePixelRatio);
+  cx.clearRect(0,0,W,H);
+  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  // grid
+  cx.strokeStyle=dark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.07)';cx.lineWidth=0.5;
+  const gy=H*0.82,gw=W*0.68,gx0=W/2-gw/2,gx1=W/2+gw/2;
+  for(let i=0;i<=8;i++){const t=i/8,lx=gx0+t*gw;cx.beginPath();cx.moveTo(lx,gy);cx.lineTo(W/2-(lx-W/2)*0.4,gy-36);cx.stroke();}
+  for(let j=0;j<=4;j++){const t=j/4;cx.beginPath();cx.moveTo(gx0*(1-t)+W/2*t,gy-t*36);cx.lineTo(gx1*(1-t)+W/2*t,gy-t*36);cx.stroke();}
+  // shadow
+  const shadowA=Math.max(0,0.15-Math.abs(pitch)/300);
+  cx.save();cx.translate(W/2,gy);cx.scale(1,.3);
+  cx.beginPath();cx.ellipse(0,0,52,18,0,0,Math.PI*2);
+  cx.fillStyle=dark?`rgba(255,255,255,${shadowA})`:`rgba(0,0,0,${shadowA})`;cx.fill();cx.restore();
+  // drone
+  const vib=parseFloat(document.getElementById('vib-slider').value);
+  const drift=parseFloat(document.getElementById('drift-slider').value);
+  const ledColor=vib>3.5&&Math.abs(drift)>0.25?'#E24B4A':vib>3.5?'#EF9F27':Math.abs(drift)>0.25?'#FAC775':'#1D9E75';
+  const cx0=W/2,cy0=H*0.47;
+  cx.save();cx.translate(cx0,cy0);
+  const pRad=pitch*Math.PI/180;
+  const arms=[[1,1],[-1,1],[1,-1],[-1,-1]];
+  const armC=dark?'#444441':'#B4B2A9',motC=dark?'#2C2C2A':'#888780';
+  arms.forEach(([sx,sy])=>{
+    const ax=sx*46,ay=sy*26+Math.sin(pRad)*sx*18;
+    cx.beginPath();cx.moveTo(0,0);cx.lineTo(ax,ay);
+    cx.strokeStyle=armC;cx.lineWidth=5;cx.lineCap='round';cx.stroke();
+    cx.beginPath();cx.arc(ax,ay,7,0,Math.PI*2);
+    cx.fillStyle=motC;cx.fill();
+    cx.strokeStyle=armC;cx.lineWidth=1.5;cx.stroke();
+    cx.save();cx.translate(ax,ay);
+    cx.strokeStyle=dark?'rgba(200,200,200,0.22)':'rgba(80,80,80,0.15)';cx.lineWidth=2;
+    for(let a=0;a<3;a++){cx.beginPath();cx.arc(0,0,11,a*Math.PI*2/3,(a+0.7)*Math.PI*2/3);cx.stroke();}
+    cx.restore();
+  });
+  const bH=13-Math.sin(pRad)*7;
+  cx.beginPath();cx.roundRect(-17,-bH/2,34,bH,4);
+  cx.fillStyle=dark?'#3C3489':'#534AB7';cx.fill();
+  cx.strokeStyle=dark?'#7F77DD':'#AFA9EC';cx.lineWidth=1;cx.stroke();
+  // LED
+  cx.beginPath();cx.arc(0,-bH/2-4,3,0,Math.PI*2);cx.fillStyle=ledColor;cx.fill();
+  // pitch arc
+  if(Math.abs(pitch)>1){
+    cx.beginPath();cx.arc(0,0,30,-Math.PI/2,pRad>0?-Math.PI/2+pRad:-Math.PI/2+pRad,pRad<0);
+    cx.strokeStyle='rgba(29,158,117,0.55)';cx.lineWidth=1.5;cx.setLineDash([3,2]);cx.stroke();cx.setLineDash([]);
+  }
+  cx.restore();
+  cx.font=`500 10px var(--font-mono,monospace)`;
+  cx.fillStyle=dark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.35)';
+  cx.fillText(`pitch ${curFilter.toFixed(1)}°`,cx0-22,cy0+48);
+  cx.restore();
+}
+
+// ── CHART ─────────────────────────────────────────────────────────
+function drawChart(){
+  const W=chartEl.width/devicePixelRatio,H=chartEl.height/devicePixelRatio;
+  ctx.save();ctx.scale(devicePixelRatio,devicePixelRatio);
+  ctx.clearRect(0,0,W,H);
+  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.05)';ctx.lineWidth=0.5;
+  for(let d=-40;d<=40;d+=20){const y=H/2-d*(H/96);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.18)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+  const dl=(data,color,dash=[],lw=1.5)=>{
+    if(data.length<2)return;
+    ctx.strokeStyle=color;ctx.setLineDash(dash);ctx.lineWidth=lw;ctx.beginPath();
+    const step=W/N;
+    data.forEach((v,i)=>{const x=i*step,y=H/2-v*(H/96);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.stroke();ctx.setLineDash([]);
+  };
+  dl(hist.actual,'rgba(180,180,180,0.3)',[5,4],1);
+  dl(hist.accel,'#E24B4A');
+  dl(hist.gyro,'#EF9F27');
+  dl(hist.filter,'#1D9E75',[],2);
+  ctx.restore();
+}
+
+// ── MAIN LOOP ─────────────────────────────────────────────────────
+function update(){
+  if(!isRunning)return;
+  time+=dt;
+  const actual=Math.sin(time*1.5)*20;
+  const vib=parseFloat(document.getElementById('vib-slider').value);
+  const drift=parseFloat(document.getElementById('drift-slider').value);
+  alphaVal=parseFloat(document.getElementById('alpha-slider').value);
+  const noise=(Math.random()-0.5)*vib*25;
+  const accelAngle=actual+noise;
+  const actualRate=Math.cos(time*1.5)*30;
+  const gyroRate=actualRate+drift*50;
+  curGyro+=gyroRate*dt;
+  if(Math.abs(curGyro)>120)curGyro=curGyro>0?120:-120;
+  curFilter=alphaVal*(curFilter+gyroRate*dt)+(1-alphaVal)*accelAngle;
+  hist.actual.push(actual);hist.accel.push(accelAngle);
+  hist.gyro.push(curGyro);hist.filter.push(curFilter);
+  if(hist.actual.length>N)Object.values(hist).forEach(a=>a.shift());
+
+  const rad=accelAngle*Math.PI/180;
+  const ax=Math.sin(rad)+(noise/100);
+  const ay=(Math.random()-0.5)*0.08;
+  const az=Math.cos(rad);
+  const gx=(Math.random()-0.5)*2;
+  const gz=(Math.random()-0.5)*2;
+
+  const setV=(id,v,d=2)=>{const el=document.getElementById('w-'+id);if(el)el.textContent=v.toFixed(d)+(id==='ap'||id==='pitch'||id==='gpitch'?'°':'');};
+  setV('ax',ax,3);setV('ay',ay,3);setV('az',az,3);
+  setV('gx',gx,2);setV('gy',gyroRate,2);setV('gz',gz,2);
+  setV('ap',accelAngle,2);setV('pitch',curFilter,2);setV('gpitch',curGyro,2);
+
+  setCellColor('ax',ax,1);setCellColor('ay',ay,0.2);setCellColor('az',az-1,0.3);
+  setCellColor('gx',gx,5);setCellColor('gy',gyroRate,40);setCellColor('gz',gz,5);
+  setCellColor('accel',accelAngle,40);setCellColor('gyro',curGyro,120);
+
+  drawChart();drawDrone3D(curFilter);
+  updateStatus(curFilter,vib,drift,alphaVal);
+  requestAnimationFrame(update);
+}
+
+function toggleSim(){
+  isRunning=!isRunning;
+  document.getElementById('play-btn').textContent=isRunning?'Dừng':'Tiếp tục';
+  const b=document.getElementById('badge');
+  b.className='badge '+(isRunning?'run':'stop');
+  b.textContent=isRunning?'● live':'● dừng';
+  if(isRunning)update();
+}
+
+// seed log
+setTimeout(()=>addLog('Hệ thống khởi động. Drone đang hover ổn định. Thử kéo thanh "Rung động cơ" lên cao để xem điều gì xảy ra!','ok'),400);
+update();
+</script>

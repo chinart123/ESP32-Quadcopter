@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRONE-IMU · GROUND STATION</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0A0B0D;--bg2:#0F1115;--bg3:#141720;
+  --amber:#E8A020;--amber2:#C07010;--amber3:rgba(232,160,32,0.12);
+  --teal:#1DBFAA;--teal2:#0E8A7A;--teal3:rgba(29,191,170,0.12);
+  --red:#E83030;--red3:rgba(232,48,48,0.12);
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#C8CDD8;--text2:#7A8090;--text3:#454A55;
+  --mono:'Share Tech Mono',monospace;--sans:'Barlow Condensed',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg)}
+.hud{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.topbar{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:8px}
+.sys-id{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.1em}
+.sys-sub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px}
+.top-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pill{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:2px;border:1px solid}
+.pill.live{border-color:var(--teal2);color:var(--teal);background:var(--teal3)}
+.pill.stop{border-color:var(--red);color:var(--red);background:var(--red3)}
+.hbtn{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:2px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;letter-spacing:.05em;transition:.15s}
+.hbtn:hover{border-color:var(--amber);color:var(--amber)}
+.hbtn.on{border-color:var(--teal);color:var(--teal);background:var(--teal3)}
+.main{display:grid;grid-template-columns:200px 1fr;gap:8px}
+.left{display:flex;flex-direction:column;gap:8px}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:10px}
+.ptitle{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between}
+.ptitle span{color:var(--amber)}
+/* 3d */
+canvas.c3d{display:block;width:100%;height:150px}
+/* compass */
+canvas.cmp{display:block;margin:0 auto}
+.dirbtns{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:6px}
+.db{font-family:var(--mono);font-size:10px;padding:4px 0;text-align:center;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;border-radius:2px;transition:.15s;letter-spacing:.04em}
+.db:hover{border-color:var(--amber2);color:var(--amber)}
+.db.act{border-color:var(--amber);color:var(--amber);background:var(--amber3)}
+.db.sp{visibility:hidden}
+.rstbtn{font-family:var(--mono);font-size:9px;width:100%;padding:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;border-radius:2px;letter-spacing:.06em;transition:.15s;margin-top:4px}
+.rstbtn:hover{border-color:var(--teal);color:var(--teal);background:var(--teal3)}
+/* status */
+.sbox{border-radius:3px;padding:8px 10px;border:1px solid;transition:background .4s,border-color .4s}
+.srow{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.sico{font-size:15px}
+.sttl{font-family:var(--mono);font-size:10px;letter-spacing:.04em}
+.sdesc{font-size:11px;color:var(--text2);line-height:1.5;font-weight:300}
+/* right */
+.right{display:flex;flex-direction:column;gap:8px}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.sc{background:var(--bg3);border:1px solid var(--border);border-radius:2px;padding:6px 8px;cursor:help;position:relative;transition:background .45s,border-color .45s}
+.scn{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.07em;margin-bottom:4px}
+.scv{font-family:var(--mono);font-size:14px;transition:color .45s}
+.scb{height:2px;border-radius:1px;margin-top:5px;width:10%;transition:width .35s,background .45s}
+.tip{display:none;position:absolute;z-index:99;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1C1F26;border:1px solid var(--border2);border-radius:3px;padding:8px 10px;width:185px;font-size:10px;line-height:1.55;color:var(--text2);box-shadow:0 4px 20px rgba(0,0,0,.7);pointer-events:none;font-weight:300}
+.sc:hover .tip{display:block}
+/* sliders */
+.sgr2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.slrow{display:flex;flex-direction:column;gap:3px}
+.slhd{display:flex;justify-content:space-between}
+.slname{font-family:var(--mono);font-size:9px;color:var(--text2);letter-spacing:.05em}
+.slval{font-family:var(--mono);font-size:10px;color:var(--amber)}
+.slhint{font-size:10px;color:var(--text3);font-weight:300;line-height:1.4}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+.arow{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding-top:6px;border-top:1px solid var(--border);margin-top:2px}
+.alab{font-family:var(--mono);font-size:9px;color:var(--text2);white-space:nowrap}
+/* charts */
+.chrow{display:grid;gap:6px}
+.chrow.two{grid-template-columns:1fr 1fr}
+.chrow.one{grid-template-columns:1fr}
+.chbox{background:var(--bg3);border:1px solid var(--border);border-radius:2px;padding:8px}
+.chlabel{font-family:var(--mono);font-size:9px;letter-spacing:.08em;margin-bottom:5px;display:flex;justify-content:space-between}
+canvas.ch{display:block;width:100%;height:100px}
+.leg{display:flex;gap:10px;flex-wrap:wrap;margin-top:5px}
+.li{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;color:var(--text2)}
+.ld{width:10px;height:2px;border-radius:1px}
+/* log */
+.logwrap{height:90px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.logwrap::-webkit-scrollbar{width:2px}
+.logwrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:1px}
+.le{display:flex;gap:7px;align-items:flex-start;padding:4px 7px;border-radius:2px;border-left:2px solid;font-size:10px;font-weight:300;line-height:1.45}
+.lt2{font-family:var(--mono);font-size:9px;color:var(--text3);white-space:nowrap;margin-top:.5px}
+.lok{background:rgba(29,191,170,0.06);border-color:var(--teal2)}
+.lok .lm{color:#7ECEC5}
+.lwarn{background:rgba(232,160,32,0.08);border-color:var(--amber2)}
+.lwarn .lm{color:var(--amber)}
+.lerr{background:rgba(232,48,48,0.08);border-color:var(--red)}
+.lerr .lm{color:#E87070}
+</style>
+</head>
+<body>
+
+<div class="hud">
+<div class="topbar">
+  <div>
+    <div class="sys-id">DRONE-IMU · GROUND STATION v4.0</div>
+    <div class="sys-sub">MPU6050 · Complementary Filter · Edu Mode</div>
+  </div>
+  <div class="top-right">
+    <span class="pill live" id="badge">● LIVE</span>
+    <button class="hbtn" id="pbtn" onclick="toggleSim()">PAUSE</button>
+    <button class="hbtn on" id="fbtn" onclick="toggleFilter()">FILTER: ON</button>
+    <button class="hbtn" onclick="resetAll()">RESET</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="left">
+    <div class="panel">
+      <div class="ptitle">3D MODEL <span id="yawlbl">YAW 0°</span></div>
+      <canvas class="c3d" id="c3d" width="360" height="300"></canvas>
+    </div>
+    <div class="panel">
+      <div class="ptitle">COMPASS + HEADING</div>
+      <canvas class="cmp" id="cmp" width="160" height="160"></canvas>
+      <div class="dirbtns" id="dirbtns">
+        <div class="db sp"></div>
+        <button class="db act" onclick="setDir(0,'N',this)">N</button>
+        <div class="db sp"></div>
+        <button class="db" onclick="setDir(315,'NW',this)">NW</button>
+        <div class="db sp"></div>
+        <button class="db" onclick="setDir(45,'NE',this)">NE</button>
+        <button class="db" onclick="setDir(270,'W',this)">W</button>
+        <div class="db sp"></div>
+        <button class="db" onclick="setDir(90,'E',this)">E</button>
+        <div class="db sp"></div>
+        <button class="db" onclick="setDir(225,'SW',this)">SW</button>
+        <button class="db" onclick="setDir(180,'S',this)">S</button>
+        <button class="db" onclick="setDir(135,'SE',this)">SE</button>
+      </div>
+      <button class="rstbtn" onclick="resetAll()">↺ RESET TO DEFAULT</button>
+    </div>
+    <div class="sbox" id="sbox" style="background:rgba(29,191,170,0.06);border-color:#0E8A7A">
+      <div class="srow"><span class="sico">✦</span><span class="sttl" id="sttl">STABLE · HOVER</span></div>
+      <div class="sdesc" id="sdesc">Drone đang bay ổn định tại chỗ.</div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="panel">
+      <div class="ptitle">SENSOR DATA <span>HOVER FOR EXPLANATION</span></div>
+      <div class="sgrid">
+        <div class="sc" id="sc-ax"><div class="scn">AX · ROLL ACCEL</div><div class="scv" id="v-ax">0.000</div><div class="scb" id="b-ax"></div><div class="tip"><b>Ax</b> — Gia tốc trái/phải (g).<br>≈0 khi bay thẳng. Tăng khi nghiêng trái/phải.</div></div>
+        <div class="sc" id="sc-ay"><div class="scn">AY · PITCH ACCEL</div><div class="scv" id="v-ay">0.000</div><div class="scb" id="b-ay"></div><div class="tip"><b>Ay</b> — Gia tốc tiến/lùi (g).<br>Thay đổi khi drone nghiêng trước/sau.</div></div>
+        <div class="sc" id="sc-az"><div class="scn">AZ · GRAVITY</div><div class="scv" id="v-az">1.000</div><div class="scb" id="b-az"></div><div class="tip"><b>Az</b> — Trọng lực (g). Luôn ≈1.0 khi bay bằng. Nghiêng → giảm về 0.</div></div>
+        <div class="sc" id="sc-gx"><div class="scn">GX · ROLL RATE</div><div class="scv" id="v-gx">0.00</div><div class="scb" id="b-gx"></div><div class="tip"><b>Gx</b> — Tốc độ xoay trái/phải (°/s).<br>Nhiễu nhỏ ±2°/s là bình thường.</div></div>
+        <div class="sc" id="sc-gy"><div class="scn">GY · PITCH RATE</div><div class="scv" id="v-gy">0.00</div><div class="scb" id="b-gy" style="background:#E8A020"></div><div class="tip"><b>Gy</b> — Tốc độ nghiêng (°/s). Kéo "Drift" cao → số này bị cộng sai số tích lũy.</div></div>
+        <div class="sc" id="sc-gz"><div class="scn">GZ · YAW RATE</div><div class="scv" id="v-gz">0.00</div><div class="scb" id="b-gz"></div><div class="tip"><b>Gz</b> — Tốc độ xoay yaw (°/s). Tăng khi nhấn nút hướng.</div></div>
+        <div class="sc" id="sc-ap"><div class="scn">PITCH · ACCEL RAW</div><div class="scv" id="v-ap">0.00°</div><div class="scb" id="b-ap" style="background:#E83030"></div><div class="tip"><b>Accel pitch</b> — Góc từ gia tốc kế. Chính xác dài hạn nhưng run loạn khi rung.</div></div>
+        <div class="sc" id="sc-pf" style="border-color:#0E8A7A;background:rgba(29,191,170,0.05)"><div class="scn" style="color:#0E8A7A">PITCH · FILTERED ✓</div><div class="scv" id="v-pf" style="color:#1DBFAA">0.00°</div><div class="scb" id="b-pf" style="background:#1DBFAA"></div><div class="tip"><b>Pitch filtered</b> — Kết quả sau bộ lọc. Đây là giá trị drone thực sự dùng để giữ thăng bằng!</div></div>
+        <div class="sc" id="sc-gp"><div class="scn">PITCH · GYRO RAW</div><div class="scv" id="v-gp">0.00°</div><div class="scb" id="b-gp" style="background:#E8A020"></div><div class="tip"><b>Gyro pitch</b> — Góc tích phân từ gyro. Mượt nhưng trôi xa theo thời gian nếu drift cao.</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ptitle">ENVIRONMENT PARAMETERS</div>
+      <div class="sgr2">
+        <div class="slrow">
+          <div class="slhd"><span class="slname">🔊 MOTOR VIBRATION</span><span class="slval" id="vibval">1.5</span></div>
+          <input type="range" min="0" max="5" step="0.1" value="1.5" id="vibsl" oninput="document.getElementById('vibval').textContent=parseFloat(this.value).toFixed(1)">
+          <span class="slhint">Cao → accel nhiễu → đường đỏ run mạnh</span>
+        </div>
+        <div class="slrow">
+          <div class="slhd"><span class="slname">🌡 GYRO DRIFT</span><span class="slval" id="driftval">0.10</span></div>
+          <input type="range" min="-0.5" max="0.5" step="0.01" value="0.1" id="driftsl" oninput="document.getElementById('driftval').textContent=parseFloat(this.value).toFixed(2)">
+          <span class="slhint">Gyro "nói dối" dần → pitch gyro lạc hướng</span>
+        </div>
+      </div>
+      <div class="arow">
+        <span class="alab">⚖ ALPHA (α)</span>
+        <input type="range" min="0.80" max="0.99" step="0.01" value="0.98" id="alphasl" oninput="alphaVal=parseFloat(this.value);document.getElementById('alphaval').textContent=alphaVal.toFixed(2)">
+        <span class="slval" id="alphaval">0.98</span>
+      </div>
+      <div class="slhint" style="margin-top:4px">α→1: tin gyro nhiều (mượt, dễ trôi) · α→0.8: tin accel nhiều (chính xác, dễ nhiễu)</div>
+    </div>
+
+    <div class="panel" style="padding-bottom:8px">
+      <div class="ptitle">PITCH ANGLE — WITH FILTER vs WITHOUT FILTER</div>
+      <div class="chrow two">
+        <div class="chbox">
+          <div class="chlabel" style="color:#1DBFAA">WITH FILTER <span style="color:var(--text3);font-size:8px">BỘ LỌC BẬT</span></div>
+          <canvas class="ch" id="chon" width="400" height="200"></canvas>
+          <div class="leg">
+            <div class="li"><div class="ld" style="background:#E83030"></div>Accel</div>
+            <div class="li"><div class="ld" style="background:#E8A020"></div>Gyro</div>
+            <div class="li"><div class="ld" style="background:#1DBFAA"></div>Filtered</div>
+            <div class="li"><div class="ld" style="background:rgba(255,255,255,0.25)"></div>Thực tế</div>
+          </div>
+        </div>
+        <div class="chbox">
+          <div class="chlabel" style="color:#E8A020">WITHOUT FILTER <span style="color:var(--text3);font-size:8px">KHÔNG CÓ BỘ LỌC</span></div>
+          <canvas class="ch" id="choff" width="400" height="200"></canvas>
+          <div class="leg">
+            <div class="li"><div class="ld" style="background:#E83030"></div>Accel thô</div>
+            <div class="li"><div class="ld" style="background:#E8A020"></div>Gyro thô</div>
+            <div class="li"><div class="ld" style="background:rgba(255,255,255,0.25)"></div>Thực tế</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div class="ptitle" style="margin:0">EVENT LOG</div>
+        <button class="hbtn" onclick="clearLog()" style="font-size:9px;padding:2px 7px">CLEAR</button>
+      </div>
+      <div class="logwrap" id="logwrap"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+var simTime=0,alphaVal=0.98,dt=0.016;
+var curGyro=0,curFilter=0,targetYaw=0,currentYaw=0,activeDir='N';
+var isRunning=true,filterOn=true;
+var NPTS=160;
+var hist={actual:[],accel:[],gyro:[],filter:[]};
+var lastStatus='',lastLogT=0,lastVib=1.5,lastDrift=0.1,lastAlpha=0.98;
+
+// resize canvases properly after DOM paint
+function resizeCanvas(cv,w,h){
+  var dpr=window.devicePixelRatio||1;
+  var rect=cv.getBoundingClientRect();
+  var W=rect.width>0?rect.width:w;
+  var H=rect.height>0?rect.height:h;
+  cv.width=Math.round(W*dpr);
+  cv.height=Math.round(H*dpr);
+  return dpr;
+}
+
+// get elements
+var c3dEl=document.getElementById('c3d');
+var cmpEl=document.getElementById('cmp');
+var chonEl=document.getElementById('chon');
+var choffEl=document.getElementById('choff');
+
+// ── DIR BUTTONS ─────────────────────────────────────────────────
+function setDir(deg,label,el){
+  targetYaw=deg; activeDir=label;
+  document.querySelectorAll('.db').forEach(function(b){b.classList.remove('act');});
+  el.classList.add('act');
+  addLog('Heading → '+label+' ('+deg+'°). Gz tăng trong lúc xoay, cảm biến cập nhật theo hướng mới.','ok');
+}
+
+function resetAll(){
+  targetYaw=0; currentYaw=0; curGyro=0; curFilter=0; simTime=0; alphaVal=0.98;
+  document.getElementById('vibsl').value=1.5; document.getElementById('vibval').textContent='1.5';
+  document.getElementById('driftsl').value=0.1; document.getElementById('driftval').textContent='0.10';
+  document.getElementById('alphasl').value=0.98; document.getElementById('alphaval').textContent='0.98';
+  document.querySelectorAll('.db').forEach(function(b){b.classList.remove('act');});
+  document.querySelector('.db:nth-child(2)').classList.add('act');
+  Object.keys(hist).forEach(function(k){hist[k]=[];});
+  activeDir='N'; lastStatus=''; lastVib=1.5; lastDrift=0.1; lastAlpha=0.98;
+  addLog('System reset → Heading Bắc (0°). Tất cả giá trị về mặc định.','ok');
+}
+
+function toggleSim(){
+  isRunning=!isRunning;
+  document.getElementById('pbtn').textContent=isRunning?'PAUSE':'RESUME';
+  var b=document.getElementById('badge');
+  b.className='pill '+(isRunning?'live':'stop');
+  b.textContent=isRunning?'● LIVE':'● PAUSED';
+  if(isRunning) requestAnimationFrame(loop);
+}
+
+function toggleFilter(){
+  filterOn=!filterOn;
+  var btn=document.getElementById('fbtn');
+  btn.textContent=filterOn?'FILTER: ON':'FILTER: OFF';
+  btn.className='hbtn'+(filterOn?' on':'');
+  addLog(filterOn?'Bộ lọc BẬT. Đường xanh (filtered) xuất hiện.':'Bộ lọc TẮT. Xem accel (đỏ run) vs gyro (vàng trôi) không có gì cứu.',filterOn?'ok':'warn');
+}
+
+// ── CELL COLOR ──────────────────────────────────────────────────
+function setCellColor(id,val,range,type){
+  var sc=document.getElementById('sc-'+id);
+  var bar=document.getElementById('b-'+id);
+  if(!sc||!bar) return;
+  var r=Math.min(Math.abs(val)/range,1);
+  var pct=Math.round(r*100);
+  var bg,bc,tc,barC;
+  if(id==='pf'){bg='rgba(29,191,170,0.05)';bc='#0E8A7A';tc='#1DBFAA';barC='#1DBFAA';}
+  else if(r<0.12){bg='#141720';bc='rgba(255,255,255,0.07)';tc='#C8CDD8';barC='#454A55';}
+  else if(type==='gyro'){barC='#E8A020';bg='rgba(232,160,32,0.09)';bc='#C07010';tc='#E8A020';}
+  else if(type==='accel'){barC='#E83030';bg='rgba(232,48,48,0.09)';bc='#A02020';tc='#E87070';}
+  else{barC='#5580EE';bg='rgba(85,128,238,0.09)';bc='#3355AA';tc='#7090EE';}
+  sc.style.background=bg; sc.style.borderColor=bc;
+  if(id!=='pf'){var dv=sc.querySelector('.scv');if(dv)dv.style.color=tc;}
+  bar.style.width=(8+pct*0.9)+'%'; bar.style.background=barC;
+}
+
+// ── LOG ─────────────────────────────────────────────────────────
+function addLog(msg,type){
+  type=type||'ok';
+  var now=performance.now();
+  if(now-lastLogT<1500) return;
+  lastLogT=now;
+  var wrap=document.getElementById('logwrap');
+  var t=String(Math.floor(simTime)).padStart(4,'0')+'s';
+  var e=document.createElement('div');
+  e.className='le l'+type;
+  e.innerHTML='<span class="lt2">'+t+'</span><span class="lm">'+msg+'</span>';
+  wrap.insertBefore(e,wrap.firstChild);
+  while(wrap.children.length>40) wrap.removeChild(wrap.lastChild);
+}
+function clearLog(){document.getElementById('logwrap').innerHTML='';}
+
+// ── STATUS ───────────────────────────────────────────────────────
+function updateStatus(pitch,vib,drift,alpha){
+  var ap=Math.abs(pitch);
+  var bg,bc,ic,ti,de,lm,lt;
+  if(vib>3.5&&Math.abs(drift)>0.25){
+    bg='rgba(232,48,48,0.08)';bc='#E83030';ic='✕';ti='DANGER · DUAL SENSOR FAIL';
+    de='Cả accel lẫn gyro đang báo sai. Bộ lọc không còn đủ thông tin. Trong thực tế: drone rơi.';
+    lm='NGUY HIỂM: Hai cảm biến lỗi đồng thời. Bộ lọc tê liệt.';lt='err';
+  } else if(vib>3.5){
+    bg='rgba(232,160,32,0.08)';bc='#C07010';ic='⚠';ti='WARNING · ACCEL SATURATED';
+    de='Rung '+vib.toFixed(1)+'× làm accel mù. Filter dựa vào gyro '+Math.round(alpha*100)+'%. Nếu gyro cũng trôi → mất kiểm soát.';
+    lm='Rung '+vib.toFixed(1)+'× → accel nhiễu nặng. Ô đỏ bùng sáng.';lt='warn';
+  } else if(Math.abs(drift)>0.25){
+    bg='rgba(232,160,32,0.06)';bc='#806010';ic='↻';ti='CAUTION · GYRO DRIFT';
+    de='Gyro trôi '+drift.toFixed(2)+'. Pitch gyro lạc xa dần. Accel hiệu chỉnh qua '+Math.round((1-alpha)*100)+'%.';
+    lm='Gyro drift='+drift.toFixed(2)+' → pitch gyro (vàng) trôi ra ngoài thực tế.';lt='warn';
+  } else if(ap>15){
+    bg='rgba(85,128,238,0.06)';bc='#3355AA';ic='↗';ti='PITCHING · '+activeDir+' '+pitch.toFixed(1)+'°';
+    de='Drone nghiêng '+pitch.toFixed(1)+'° hướng '+activeDir+'. Lực đẩy lệch ngang → drone di chuyển.';
+    lm='Góc pitch '+pitch.toFixed(1)+'° — drone đang di chuyển về phía '+activeDir+'.';lt='ok';
+  } else if(ap<3){
+    bg='rgba(29,191,170,0.06)';bc='#0E8A7A';ic='✦';ti='STABLE · HOVER · '+activeDir;
+    de='Hover ổn định. Heading: '+activeDir+'. Bộ lọc hoạt động tốt trong điều kiện hiện tại.';
+    lm=null;
+  } else {
+    bg='rgba(29,191,170,0.04)';bc='rgba(255,255,255,0.07)';ic='◈';ti='ADJUSTING · '+pitch.toFixed(1)+'°';
+    de='Pha chuyển tiếp. Filter cân bằng gyro ('+Math.round(alpha*100)+'%) + accel ('+Math.round((1-alpha)*100)+'%).';
+    lm=null;
+  }
+  var box=document.getElementById('sbox');
+  box.style.background=bg; box.style.borderColor=bc;
+  document.getElementById('sttl').textContent=ti;
+  document.getElementById('sdesc').textContent=de;
+  document.querySelector('.sico').textContent=ic;
+  if(lm&&ti!==lastStatus){addLog(lm,lt); lastStatus=ti;}
+  var v2=parseFloat(document.getElementById('vibsl').value);
+  var d2=parseFloat(document.getElementById('driftsl').value);
+  var a2=parseFloat(document.getElementById('alphasl').value);
+  if(Math.abs(v2-lastVib)>=0.5){addLog('Motor vibration → '+v2.toFixed(1)+'×. '+(v2>3?'Accel bão hòa nhiễu — ô đỏ bùng sáng.':'Mức bình thường.'),v2>3?'warn':'ok');lastVib=v2;}
+  if(Math.abs(d2-lastDrift)>=0.1){addLog('Gyro drift → '+d2.toFixed(2)+'. '+(Math.abs(d2)>0.2?'Pitch gyro (vàng) sẽ trôi.':'Drift nhỏ, accel bù được.'),Math.abs(d2)>0.2?'warn':'ok');lastDrift=d2;}
+  if(Math.abs(a2-lastAlpha)>=0.03){addLog('Alpha → '+a2.toFixed(2)+'. '+(a2>0.95?'Tin gyro nhiều: mượt hơn.':'Tin accel nhiều: chính xác hơn.'),'ok');lastAlpha=a2;}
+}
+
+// ── 3D DRONE ─────────────────────────────────────────────────────
+function draw3D(){
+  var cv=c3dEl; var ctx=cv.getContext('2d');
+  var dpr=window.devicePixelRatio||1;
+  var W=cv.width/dpr; var H=cv.height/dpr;
+  ctx.save(); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  // grid floor
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=0.5;
+  var gy=H*0.85,gw=W*0.72,gx0=(W-gw)/2,gx1=gx0+gw,pers=0.38,gh=28;
+  for(var i=0;i<=8;i++){var t=i/8,lx=gx0+t*gw;ctx.beginPath();ctx.moveTo(lx,gy);ctx.lineTo(W/2-(lx-W/2)*pers,gy-gh);ctx.stroke();}
+  for(var j=0;j<=4;j++){var tj=j/4;ctx.beginPath();ctx.moveTo(gx0*(1-tj)+W/2*tj,gy-tj*gh);ctx.lineTo(gx1*(1-tj)+W/2*tj,gy-tj*gh);ctx.stroke();}
+  // shadow
+  ctx.save(); ctx.translate(W/2,gy); ctx.scale(1,0.25);
+  ctx.beginPath(); ctx.ellipse(0,0,50,16,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,'+Math.max(0,0.1-Math.abs(curFilter)/280)+')'; ctx.fill();
+  ctx.restore();
+  var vib=parseFloat(document.getElementById('vibsl').value);
+  var drift=parseFloat(document.getElementById('driftsl').value);
+  var led=vib>3.5&&Math.abs(drift)>0.25?'#E83030':vib>3.5?'#E8A020':Math.abs(drift)>0.25?'#C07010':'#1DBFAA';
+  var cx0=W/2, cy0=H*0.44;
+  ctx.save(); ctx.translate(cx0,cy0);
+  var pR=curFilter*Math.PI/180;
+  var yR=currentYaw*Math.PI/180;
+  // 4 arms with yaw + pitch effect
+  var arms=[[-1,-1],[1,-1],[-1,1],[1,1]];
+  for(var ai=0;ai<arms.length;ai++){
+    var sx=arms[ai][0],sy=arms[ai][1];
+    var bx=sx*42,by=sy*22;
+    var ax=bx*Math.cos(yR)-by*Math.sin(yR)*0.2;
+    var ay=by+Math.sin(pR)*sx*15+bx*Math.sin(yR)*0.12;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(ax,ay);
+    ctx.strokeStyle='#303540'; ctx.lineWidth=5; ctx.lineCap='round'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(ax,ay,7,0,Math.PI*2);
+    ctx.fillStyle='#1E2128'; ctx.fill();
+    ctx.strokeStyle='#404550'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.save(); ctx.translate(ax,ay);
+    ctx.strokeStyle='rgba(200,220,255,0.18)'; ctx.lineWidth=1.5;
+    for(var a=0;a<3;a++){ctx.beginPath();ctx.arc(0,0,10,a*Math.PI*2/3,(a+0.7)*Math.PI*2/3);ctx.stroke();}
+    ctx.restore();
+  }
+  // body
+  var bH=11-Math.sin(pR)*5;
+  ctx.beginPath(); 
+  // FIX: Đảm bảo tương thích với các trình duyệt không hỗ trợ roundRect
+  if (ctx.roundRect) {
+      ctx.roundRect(-15, -bH/2, 30, bH, 3);
+  } else {
+      ctx.rect(-15, -bH/2, 30, bH);
+  }
+  ctx.fillStyle='#1A1560'; ctx.fill();
+  ctx.strokeStyle='#3D37B0'; ctx.lineWidth=1; ctx.stroke();
+  // heading arrow
+  var hx=Math.sin(yR)*18, hy=-Math.cos(yR)*18;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(hx,hy);
+  ctx.strokeStyle='rgba(232,160,32,0.55)'; ctx.lineWidth=1.5; ctx.setLineDash([3,2]); ctx.stroke(); ctx.setLineDash([]);
+  // LED
+  ctx.beginPath(); ctx.arc(0,-bH/2-3,2.5,0,Math.PI*2); ctx.fillStyle=led; ctx.fill();
+  // pitch arc
+  if(Math.abs(curFilter)>1){
+    ctx.beginPath(); ctx.arc(0,0,26,-Math.PI/2,pR>0?-Math.PI/2+pR:-Math.PI/2+pR,pR<0);
+    ctx.strokeStyle='rgba(29,191,170,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([2,2]); ctx.stroke(); ctx.setLineDash([]);
+  }
+  ctx.restore();
+  ctx.font='400 9px "Share Tech Mono",monospace';
+  ctx.fillStyle='rgba(255,255,255,0.28)';
+  ctx.fillText('PITCH '+curFilter.toFixed(1)+'°  YAW '+Math.round(currentYaw)+'°',cx0-42,cy0+48);
+  ctx.restore();
+}
+
+// ── COMPASS ──────────────────────────────────────────────────────
+function drawCompass(){
+  var cv=cmpEl; var ctx=cv.getContext('2d');
+  var dpr=window.devicePixelRatio||1;
+  var S=cv.width/dpr;
+  ctx.save(); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,S,S);
+  var cx=S/2,cy=S/2,R=S/2-3;
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1; ctx.stroke();
+  var dirs=['N','NE','E','SE','S','SW','W','NW'];
+  for(var i=0;i<8;i++){
+    var ang=i/8*Math.PI*2-Math.PI/2;
+    var isCard=i%2===0;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(ang)*(R-(isCard?2:5)),cy+Math.sin(ang)*(R-(isCard?2:5)));
+    ctx.lineTo(cx+Math.cos(ang)*(R-(isCard?11:8)),cy+Math.sin(ang)*(R-(isCard?11:8)));
+    ctx.strokeStyle=dirs[i]==='N'?'#E83030':isCard?'rgba(255,255,255,0.45)':'rgba(255,255,255,0.18)';
+    ctx.lineWidth=isCard?1.5:0.5; ctx.stroke();
+    if(isCard){
+      ctx.font='500 8px "Share Tech Mono",monospace';
+      ctx.fillStyle=dirs[i]==='N'?'#E83030':'rgba(255,255,255,0.5)';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      var tr=R-17;
+      ctx.fillText(dirs[i],cx+Math.cos(ang)*tr,cy+Math.sin(ang)*tr);
+    }
+  }
+  // needle
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(currentYaw*Math.PI/180);
+  ctx.beginPath(); ctx.moveTo(0,-(R-14)); ctx.lineTo(4,0); ctx.lineTo(-4,0); ctx.closePath();
+  ctx.fillStyle='#E8A020'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0,(R-14)); ctx.lineTo(3,0); ctx.lineTo(-3,0); ctx.closePath();
+  ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,0,4,0,Math.PI*2);
+  ctx.fillStyle='#0F1115'; ctx.fill(); ctx.strokeStyle='#E8A020'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.restore();
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.restore();
+}
+
+// ── CHART ────────────────────────────────────────────────────────
+function drawChart(cv,showFilter){
+  var ctx=cv.getContext('2d');
+  var dpr=window.devicePixelRatio||1;
+  var W=cv.width/dpr; var H=cv.height/dpr;
+  ctx.save(); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=0.5;
+  for(var d=-40;d<=40;d+=20){var y=H/2-d*(H/96);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+  function dl(data,color,dash,lw){
+    if(data.length<2) return;
+    ctx.strokeStyle=color; ctx.setLineDash(dash||[]); ctx.lineWidth=lw||1.5; ctx.beginPath();
+    var step=W/NPTS;
+    for(var i=0;i<data.length;i++){var x=i*step,y=H/2-data[i]*(H/96);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  dl(hist.actual,'rgba(255,255,255,0.18)',[4,3],1);
+  dl(hist.accel,'#E83030');
+  dl(hist.gyro,'#E8A020');
+  if(showFilter) dl(hist.filter,'#1DBFAA',[],2);
+  ctx.restore();
+}
+
+// ── MAIN LOOP ────────────────────────────────────────────────────
+function loop(){
+  if(!isRunning) return;
+  simTime+=dt;
+
+  // smooth yaw
+  var diff=targetYaw-currentYaw;
+  if(diff>180) diff-=360; if(diff<-180) diff+=360;
+  var speed=Math.min(Math.abs(diff),2.5)*Math.sign(diff);
+  currentYaw=(currentYaw+speed+360)%360;
+  var gz=speed/dt;
+  document.getElementById('yawlbl').textContent='YAW '+Math.round(currentYaw)+'°';
+
+  var actual=Math.sin(simTime*1.5)*20;
+  var vib=parseFloat(document.getElementById('vibsl').value);
+  var drift=parseFloat(document.getElementById('driftsl').value);
+  alphaVal=parseFloat(document.getElementById('alphasl').value);
+  var noise=(Math.random()-0.5)*vib*25;
+  var accelAngle=actual+noise;
+  var actualRate=Math.cos(simTime*1.5)*30;
+  var gyroRate=actualRate+drift*50;
+  curGyro+=gyroRate*dt;
+  if(curGyro>120) curGyro=120; if(curGyro<-120) curGyro=-120;
+  curFilter=alphaVal*(curFilter+gyroRate*dt)+(1-alphaVal)*accelAngle;
+  hist.actual.push(actual); hist.accel.push(accelAngle);
+  hist.gyro.push(curGyro); hist.filter.push(curFilter);
+  if(hist.actual.length>NPTS) Object.keys(hist).forEach(function(k){hist[k].shift();});
+
+  var rad=accelAngle*Math.PI/180;
+  var ax=Math.sin(rad)+(noise/100), ay=(Math.random()-0.5)*0.08, az=Math.cos(rad);
+  var gx=(Math.random()-0.5)*2, gy=gyroRate;
+
+  function sv(id,v,d,sfx){var el=document.getElementById(id);if(el)el.textContent=v.toFixed(d)+(sfx||'');}
+  sv('v-ax',ax,3); sv('v-ay',ay,3); sv('v-az',az,3);
+  sv('v-gx',gx,2); sv('v-gy',gy,2); sv('v-gz',gz,1);
+  sv('v-ap',accelAngle,2,'°'); sv('v-pf',curFilter,2,'°'); sv('v-gp',curGyro,2,'°');
+
+  setCellColor('ax',ax,0.8,'n'); setCellColor('ay',ay,0.15,'n'); setCellColor('az',az-1,0.3,'n');
+  setCellColor('gx',gx,4,'gyro'); setCellColor('gy',Math.abs(gy),35,'gyro'); setCellColor('gz',Math.abs(gz),30,'gyro');
+  setCellColor('ap',accelAngle,35,'accel'); setCellColor('gp',curGyro,100,'gyro');
+
+  draw3D(); drawCompass();
+  drawChart(chonEl,true); drawChart(choffEl,false);
+  updateStatus(curFilter,vib,drift,alphaVal);
+  requestAnimationFrame(loop);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+// Wait for layout, then start
+setTimeout(function(){
+  // resize compass to square based on actual CSS size
+  var dpr=window.devicePixelRatio||1;
+  var cmpRect=cmpEl.getBoundingClientRect();
+  var S=Math.min(cmpRect.width||160,160);
+  cmpEl.width=Math.round(S*dpr); cmpEl.height=Math.round(S*dpr);
+  cmpEl.style.width=S+'px'; cmpEl.style.height=S+'px';
+  // 3d canvas
+  var r3=c3dEl.getBoundingClientRect();
+  c3dEl.width=Math.round((r3.width||200)*dpr); c3dEl.height=Math.round((r3.height||150)*dpr);
+  // charts
+  [chonEl,choffEl].forEach(function(cv){
+    var r=cv.getBoundingClientRect();
+    cv.width=Math.round((r.width||300)*dpr); cv.height=Math.round((r.height||100)*dpr);
+  });
+  addLog('Ground Station online. Heading: Bắc (0°). Kéo "Motor Vibration" để thấy accel mất kiểm soát.','ok');
+  setTimeout(function(){
+    addLog('Gợi ý: Nhấn nút hướng S/E/W để drone xoay mượt. Nhấn FILTER:ON để bật/tắt bộ lọc.','ok');
+  },2200);
+  requestAnimationFrame(loop);
+},150);
+</script>
+</body>
+</html>
