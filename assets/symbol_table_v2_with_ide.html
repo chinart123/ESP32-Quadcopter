@@ -1,0 +1,165 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.tab{padding:5px 11px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;font-size:12px;font-weight:500}
+.tab.on{background:var(--color-background-primary);color:var(--color-text-primary);border-color:var(--color-border-primary)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:6px 7px;font-size:11px;font-weight:500;color:var(--color-text-secondary);border-bottom:1px solid var(--color-border-secondary);white-space:nowrap}
+td{padding:5px 7px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:top;line-height:1.5;font-size:12px}
+tr:hover td{background:var(--color-background-secondary)}
+code{font-family:var(--font-mono);font-size:11px;background:var(--color-background-secondary);padding:1px 4px;border-radius:3px}
+code.new{background:#EAF3DE;color:#3B6D11}
+code.del{background:#FCEBEB;color:#A32D2D;text-decoration:line-through}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:1px 6px;border-radius:10px;white-space:nowrap;margin:1px}
+.bk{background:#E6F1FB;color:#185FA5}
+.ba{background:#FAEEDA;color:#854F0B}
+.be{background:#EAF3DE;color:#3B6D11}
+.bg{background:#F1EFE8;color:#5F5E5A}
+.br{background:#FCEBEB;color:#A32D2D}
+.bp{background:#EEEDFE;color:#534AB7}
+.warn{font-size:10px;color:#A32D2D}
+.ok{font-size:10px;color:#3B6D11}
+</style>
+<div class="tabs" id="tabs">
+  <div class="tab on" onclick="show('all',this)">Tất cả</div>
+  <div class="tab" onclick="show('imu',this)">IMU</div>
+  <div class="tab" onclick="show('motor',this)">Motor</div>
+  <div class="tab" onclick="show('pid',this)">PID</div>
+  <div class="tab" onclick="show('btn',this)">Button</div>
+  <div class="tab" onclick="show('board',this)">Board</div>
+  <div class="tab" onclick="show('tel',this)">Telemetry</div>
+  <div class="tab" onclick="show('time',this)">Time</div>
+  <div class="tab" onclick="show('conflict',this)">⚠️ Xung đột</div>
+  <div class="tab" onclick="show('resolved',this)">✅ Đã quyết định</div>
+</div>
+<table>
+<thead><tr>
+  <th style="width:28%">Tên hiện tại</th>
+  <th style="width:14%">Tên mới / quyết định</th>
+  <th style="width:7%">Chip</th>
+  <th style="width:12%">IDE</th>
+  <th style="width:7%">Module</th>
+  <th style="width:7%">Loại</th>
+  <th>Ghi chú</th>
+</tr></thead>
+<tbody id="tbody"></tbody>
+</table>
+<script>
+const D=[
+  // IMU
+  {n:"DRN_MPU6050_Init()",r:"✅ giữ",c:"esp",ide:["idf"],m:"imu",t:"func",x:false,note:"ESP-IDF init I2C + config MPU"},
+  {n:"DRN_MPU6050_Calibrate()",r:"✅ giữ",c:"esp",ide:["idf"],m:"imu",t:"func",x:false,note:"1000 mẫu tính offset"},
+  {n:"DRN_MPU6050_Read_Raw()",r:"✅ giữ",c:"esp",ide:["idf"],m:"imu",t:"func",x:false,note:"Đọc raw 14 byte burst"},
+  {n:"DRN_MPU6050_Compute()",r:"✅ giữ",c:"esp",ide:["idf"],m:"imu",t:"func",x:false,note:"Complementary filter"},
+  {n:"DRN_MPU6050_Run_Task(t)",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"imu",t:"func",x:false,note:"Cooperative task — cả 3 IDE dùng chung"},
+  {n:"MPU_Fusion_Init()",r:"→ DRN_MPU6050_Init()",c:"stm",ide:["keil"],m:"imu",t:"func",x:true,note:"Tên cũ bare-metal — trùng chức năng"},
+  {n:"MPU_Fusion_Read_Burst()",r:"→ DRN_MPU6050_Read_Raw()",c:"stm",ide:["keil"],m:"imu",t:"func",x:true,note:"Rename để khớp ESP32"},
+  {n:"MPU_Fusion_Compute()",r:"→ DRN_MPU6050_Compute()",c:"stm",ide:["keil"],m:"imu",t:"func",x:true,note:"Rename để khớp ESP32"},
+  {n:"MPU_WriteReg(reg, data)",r:"✅ giữ",c:"both",ide:["keil","idf"],m:"imu",t:"func",x:false,note:"Cùng tên cả hai — static internal"},
+  {n:"MPU_Read_Multi(reg,*d,sz)",r:"✅ giữ",c:"both",ide:["keil","idf"],m:"imu",t:"func",x:false,note:"Cùng tên cả hai — static internal"},
+  {n:"MPU_WakeUp() / MPU_Sleep()",r:"✅ giữ",c:"both",ide:["keil","idf"],m:"imu",t:"func",x:false,note:"Cùng tên — OK"},
+  {n:"Filter_Machine_Init/Run/Calibrate()",r:"→ DRN_MPU6050_* tương ứng",c:"stm",ide:["keil"],m:"imu",t:"func",x:true,note:"STM32 only wrapper — hợp nhất vào DRN_"},
+  {n:"drn_mpu_isr_handler(void*)",r:"✅ giữ",c:"esp",ide:["idf"],m:"imu",t:"func",x:false,note:"ESP-IDF ISR — M2"},
+  {n:"drn_flight_core_task(void*)",r:"✅ giữ",c:"esp",ide:["idf"],m:"imu",t:"func",x:false,note:"ESP-IDF FreeRTOS task — M2"},
+  {n:"MPU_Motion_t Drone_IMU",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"imu",t:"var",x:false,note:"Global IMU data — cùng tên cả hai ✅"},
+  {n:"drn_mpu_motion_t drn_mpu_data",r:"→ xóa, dùng Drone_IMU",c:"esp",ide:["idf"],m:"imu",t:"var",x:true,note:"2 instance cho cùng 1 thứ — merge lại"},
+  {n:"xx_mpu_state",r:"✅ giữ (debug var)",c:"both",ide:["keil","idf"],m:"imu",t:"var",x:false,note:"xx_ = convention debug của bạn — OK"},
+
+  // MOTOR
+  {n:"DRN_Motor_PWM_Init()",r:"✅ giữ",c:"stm",ide:["keil"],m:"motor",t:"func",x:false,note:"STM32 TIM3 4kHz, dùng PA7"},
+  {n:"DRN_Motor_Update_Logic(arm,mode)",r:"✅ giữ",c:"stm",ide:["keil"],m:"motor",t:"func",x:false,note:"STM32 state machine arm/disarm"},
+  {n:"DRN_Motor_Run_Task(t)",r:"✅ giữ",c:"stm",ide:["keil"],m:"motor",t:"func",x:false,note:"Cooperative task pattern"},
+  {n:"DRN_Timer_PWM_Init()",r:"→ merge vào DRN_Motor_PWM_Init()",c:"stm",ide:["keil"],m:"motor",t:"func",x:true,note:"Trùng chức năng — 2 hàm init cùng TIM3"},
+  {n:"DRN_Timer_PWM_SetDuty(ch,pct)",r:"✅ giữ",c:"stm",ide:["keil"],m:"motor",t:"func",x:false,note:"STM32 — set duty theo %"},
+  {n:"HAL_TIM3_PWM_Init()",r:"→ ẩn vào DRN_Motor_PWM_Init()",c:"stm",ide:["keil"],m:"motor",t:"func",x:true,note:"HAL bị lộ — wrap vào DRN_ layer"},
+  {n:"HAL_TIM3_PWM_SetDuty(ch,duty)",r:"→ ẩn vào DRN_Timer_PWM_SetDuty()",c:"both",ide:["keil"],m:"motor",t:"func",x:true,note:"HAL bị lộ — wrap vào DRN_ layer"},
+  {n:"Motor_Mixer(base_throttle)",r:"✅ giữ",c:"stm",ide:["keil"],m:"motor",t:"func",x:false,note:"STM32 — tính m1..m4 từ PID"},
+  {n:"xx_pwm_motor_1",r:"✅ giữ (debug)",c:"stm",ide:["keil"],m:"motor",t:"var",x:false,note:"xx_ debug convention — OK"},
+  {n:"xx_gate_state / xx_ramp_state",r:"✅ giữ (debug)",c:"stm",ide:["keil"],m:"motor",t:"var",x:false,note:"xx_ debug convention — OK"},
+
+  // PID
+  {n:"PID_Controller_t",r:"✅ giữ — chuẩn",c:"both",ide:["keil","idf","ard"],m:"pid",t:"struct",x:false,note:"Cùng tên cả hai. Fields: Kp,Ki,Kd,setpoint,error,integral,prev_error,out,out_max"},
+  {n:"PID_t",r:"→ xóa, dùng PID_Controller_t",c:"esp",ide:["ard"],m:"pid",t:"struct",x:true,note:"Chỉ trong file .md cũ — không có trong repo thật"},
+  {n:"PID_Roll, PID_Pitch, PID_Yaw",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"pid",t:"var",x:false,note:"extern trên cả hai repo"},
+  {n:"PID_Init()",r:"✅ giữ",c:"stm",ide:["keil"],m:"pid",t:"func",x:false,note:"STM32 — khởi tạo 3 PID"},
+  {n:"PID_Compute(roll,pitch,yaw,dt)",r:"✅ giữ",c:"stm",ide:["keil"],m:"pid",t:"func",x:false,note:"STM32 — gọi inner PID"},
+  {n:"Calculate_Single_PID(*pid,val,dt)",r:"✅ giữ (static)",c:"stm",ide:["keil"],m:"pid",t:"func",x:false,note:"STM32 static internal"},
+  {n:"pid_compute(*pid,sp,meas,dt)",r:"→ rename PID_Compute() hoặc Calculate_Single_PID()",c:"esp",ide:["idf","ard"],m:"pid",t:"func",x:true,note:"Tên không khớp STM32 — cần đồng bộ"},
+
+  // BUTTON
+  {n:"DRN_Button_Context",r:"✅ giữ — chuẩn",c:"both",ide:["keil","idf","ard"],m:"btn",t:"struct",x:false,note:"Đã quyết định: đây là tên chuẩn"},
+  {n:"Button_Context",r:"→ xóa, dùng DRN_Button_Context",c:"both",ide:["keil","idf"],m:"btn",t:"struct",x:true,note:"Đã quyết định: xóa cái này"},
+  {n:"DRN_Button_Init()",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"btn",t:"func",x:false,note:"Cùng tên cả hai"},
+  {n:"DRN_Button_State_Hardware_Scan()",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"btn",t:"func",x:false,note:"Cùng tên cả hai"},
+  {n:"DRN_Button_FSM_Process(*btn,tick)",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"btn",t:"func",x:false,note:"Cùng tên cả hai"},
+  {n:"button_state_hardware_scan()",r:"→ xóa, dùng DRN_Button_*",c:"both",ide:["keil","idf"],m:"btn",t:"func",x:true,note:"Tên thứ 2 không prefix — xóa"},
+  {n:"button_fsm_process(*btn,tick)",r:"→ xóa, dùng DRN_Button_*",c:"both",ide:["keil","idf"],m:"btn",t:"func",x:true,note:"Tên thứ 2 không prefix — xóa"},
+  {n:"DRN_ButtonEvent_t",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"btn",t:"enum",x:false,note:"Cùng tên — OK"},
+  {n:"ButtonEvent_TypeDef",r:"→ xóa, dùng DRN_ButtonEvent_t",c:"both",ide:["keil","idf"],m:"btn",t:"enum",x:true,note:"Tên thứ 2 — xóa"},
+  {n:"drn_btn_PA0, drn_btn_PA1",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"btn",t:"var",x:false,note:"Cùng tên extern — OK"},
+  {n:"btn_0, btn_1",r:"→ xóa, dùng drn_btn_PA0/PA1",c:"esp",ide:["idf"],m:"btn",t:"var",x:true,note:"Tên thứ 2 không prefix — xóa"},
+
+  // BOARD
+  {n:"drn_main_board_choose_Init()",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"board",t:"func",x:false,note:"Cùng tên cả hai — abstraction layer"},
+  {n:"drn_main_board_choose_Delay_ms()",r:"✅ giữ",c:"both",ide:["keil","idf","ard"],m:"board",t:"func",x:false,note:"Cùng tên cả hai"},
+  {n:"main_board_choose_Init()",r:"→ xóa, dùng drn_ version",c:"both",ide:["keil","idf"],m:"board",t:"func",x:true,note:"Tên cũ không drn_ prefix — xóa"},
+  {n:"main_board_choose_Delay_ms()",r:"→ xóa, dùng drn_ version",c:"both",ide:["keil","idf"],m:"board",t:"func",x:true,note:"Tên cũ không drn_ prefix — xóa"},
+
+  // TELEMETRY
+  {n:"Telemetry_Init()",r:"✅ giữ",c:"stm",ide:["keil"],m:"tel",t:"func",x:false,note:"STM32 UART HC-05"},
+  {n:"Telemetry_Send_CSV(...)",r:"✅ giữ",c:"stm",ide:["keil"],m:"tel",t:"func",x:false,note:"STM32 — CSV 10Hz"},
+  {n:"Telemetry_Print_Header()",r:"✅ giữ",c:"stm",ide:["keil"],m:"tel",t:"func",x:false,note:"STM32"},
+  {n:"Telemetry_Update_I2C_Counter()",r:"✅ giữ",c:"stm",ide:["keil"],m:"tel",t:"func",x:false,note:"STM32 throughput tracking"},
+  {n:"DroneCmd_t",r:"✅ giữ",c:"esp",ide:["idf","ard"],m:"tel",t:"struct",x:false,note:"ESP32 — CRSF/BT packet"},
+  {n:"parse_packet(*buf,len,*cmd)",r:"✅ giữ (static)",c:"esp",ide:["idf"],m:"tel",t:"func",x:false,note:"ESP32 CRSF parser"},
+  {n:"last_csv_tick",r:"✅ giữ (debug)",c:"stm",ide:["keil"],m:"tel",t:"var",x:false,note:"STM32 telemetry state"},
+
+  // TIME
+  {n:"DRN_Time_Init()",r:"✅ giữ",c:"stm",ide:["keil"],m:"time",t:"func",x:false,note:"STM32 SysTick 1ms"},
+  {n:"DRN_Millis()",r:"✅ giữ",c:"stm",ide:["keil"],m:"time",t:"func",x:false,note:"STM32 ms counter"},
+  {n:"micros()",r:"⚠️ cẩn thận",c:"both",ide:["keil","idf","ard"],m:"time",t:"func",x:true,note:"Cùng tên nhưng khác return type: STM32=uint16 (overflow 65ms!) / ESP32=uint32"},
+  {n:"HAL_TIM4_Micros_Init()",r:"✅ giữ (internal)",c:"stm",ide:["keil"],m:"time",t:"func",x:false,note:"STM32 TIM4 µs counter"},
+  {n:"esp_timer_get_time()",r:"✅ giữ",c:"esp",ide:["idf"],m:"time",t:"func",x:false,note:"ESP32 µs từ boot — uint64"},
+];
+
+const imap={keil:'<span class="badge bk">Keil</span>',idf:'<span class="badge be">ESP-IDF</span>',ard:'<span class="badge ba">Arduino</span>'};
+const chipBadge={stm:'<span class="badge bk">STM32</span>',esp:'<span class="badge ba">ESP32</span>',both:'<span class="badge bg">Cả hai</span>'};
+const typeBadge={func:'<span class="badge bg">hàm</span>',var:'<span class="badge bp">biến</span>',struct:'<span class="badge bk">struct</span>',enum:'<span class="badge bg">enum</span>'};
+
+let cur='all';
+function show(tab,el){
+  cur=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  render();
+}
+function render(){
+  const rows=D.filter(d=>{
+    if(cur==='all') return true;
+    if(cur==='conflict') return d.x;
+    if(cur==='resolved') return d.r&&d.r.startsWith('→');
+    return d.m===cur;
+  });
+  const tbody=document.getElementById('tbody');
+  let html='';
+  rows.forEach(d=>{
+    const ideHtml=(d.ide||[]).map(i=>imap[i]||'').join(' ');
+    const rHtml=d.r.startsWith('✅')?`<code class="ok" style="background:transparent;font-size:10px">${d.r}</code>`
+      :d.r.startsWith('→')?`<code class="new" style="font-size:10px">${d.r}</code>`
+      :`<code style="font-size:10px">${d.r}</code>`;
+    const nameHtml=d.x?`<code class="del">${d.n}</code>`:`<code>${d.n}</code>`;
+    html+=`<tr>
+      <td>${nameHtml}</td>
+      <td>${rHtml}</td>
+      <td>${chipBadge[d.c]}</td>
+      <td>${ideHtml}</td>
+      <td style="font-size:11px;color:var(--color-text-secondary)">${d.m}</td>
+      <td>${typeBadge[d.t]||d.t}</td>
+      <td style="color:var(--color-text-secondary)">${d.note}</td>
+    </tr>`;
+  });
+  tbody.innerHTML=html||'<tr><td colspan="7" style="text-align:center;color:var(--color-text-secondary);padding:20px">Không có dữ liệu</td></tr>';
+}
+render();
+</script>
