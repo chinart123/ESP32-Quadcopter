@@ -43,7 +43,7 @@ static const char* TAG = "DRN_MPU6050";
 #define MPU6500_WHO_AM_I_VAL    0x70
 
 // ======================== Public Data Instance ========================
-drn_mpu_motion_t drn_mpu_data;
+drn_mpu_motion_t Drone_IMU;
 
 // ======================== Internal Static Variables ========================
 static bool xx_initialized = false;
@@ -126,7 +126,7 @@ esp_err_t DRN_MPU6050_Init(void) {
     if (ret != ESP_OK) return ret;
 
     // 4. Clear motion data
-    memset(&drn_mpu_data, 0, sizeof(drn_mpu_data));
+    memset(&Drone_IMU, 0, sizeof(Drone_IMU));
     xx_initialized = true;
     xx_last_read_ms = DRN_Millis();
 
@@ -177,26 +177,26 @@ esp_err_t DRN_MPU6050_Calibrate(void) {
     }
 
     // Compute average offsets
-    drn_mpu_data.accel_x_offset = (int16_t)(sum_ax / num_samples);
-    drn_mpu_data.accel_y_offset = (int16_t)(sum_ay / num_samples);
+    Drone_IMU.accel_x_offset = (int16_t)(sum_ax / num_samples);
+    Drone_IMU.accel_y_offset = (int16_t)(sum_ay / num_samples);
     // Z axis should read +1g (4096 LSB) when level
-    drn_mpu_data.accel_z_offset = (int16_t)((sum_az / num_samples) - 4096);
-    drn_mpu_data.gyro_x_offset  = (int16_t)(sum_gx / num_samples);
-    drn_mpu_data.gyro_y_offset  = (int16_t)(sum_gy / num_samples);
-    drn_mpu_data.gyro_z_offset  = (int16_t)(sum_gz / num_samples);
+    Drone_IMU.accel_z_offset = (int16_t)((sum_az / num_samples) - 4096);
+    Drone_IMU.gyro_x_offset  = (int16_t)(sum_gx / num_samples);
+    Drone_IMU.gyro_y_offset  = (int16_t)(sum_gy / num_samples);
+    Drone_IMU.gyro_z_offset  = (int16_t)(sum_gz / num_samples);
 
-    drn_mpu_data.is_calibrated = 1;
-    drn_mpu_data.last_update_ms = DRN_Millis();
+    Drone_IMU.is_calibrated = 1;
+    Drone_IMU.last_update_ms = DRN_Millis();
 
     ESP_LOGI(TAG, "Calibration complete");
     ESP_LOGI(TAG, "Accel offsets: X=%d Y=%d Z=%d",
-             drn_mpu_data.accel_x_offset,
-             drn_mpu_data.accel_y_offset,
-             drn_mpu_data.accel_z_offset);
+             Drone_IMU.accel_x_offset,
+             Drone_IMU.accel_y_offset,
+             Drone_IMU.accel_z_offset);
     ESP_LOGI(TAG, "Gyro offsets: X=%d Y=%d Z=%d",
-             drn_mpu_data.gyro_x_offset,
-             drn_mpu_data.gyro_y_offset,
-             drn_mpu_data.gyro_z_offset);
+             Drone_IMU.gyro_x_offset,
+             Drone_IMU.gyro_y_offset,
+             Drone_IMU.gyro_z_offset);
     return ESP_OK;
 }
 
@@ -214,19 +214,19 @@ esp_err_t DRN_MPU6050_Read_Raw(void) {
     }
 
     // Parse big‑endian data
-    drn_mpu_data.accel_x_raw = (int16_t)((buffer[0] << 8) | buffer[1]);
-    drn_mpu_data.accel_y_raw = (int16_t)((buffer[2] << 8) | buffer[3]);
-    drn_mpu_data.accel_z_raw = (int16_t)((buffer[4] << 8) | buffer[5]);
-    drn_mpu_data.temp_raw     = (int16_t)((buffer[6] << 8) | buffer[7]);
-    drn_mpu_data.gyro_x_raw   = (int16_t)((buffer[8] << 8) | buffer[9]);
-    drn_mpu_data.gyro_y_raw   = (int16_t)((buffer[10] << 8) | buffer[11]);
-    drn_mpu_data.gyro_z_raw   = (int16_t)((buffer[12] << 8) | buffer[13]);
+    Drone_IMU.accel_x_raw = (int16_t)((buffer[0] << 8) | buffer[1]);
+    Drone_IMU.accel_y_raw = (int16_t)((buffer[2] << 8) | buffer[3]);
+    Drone_IMU.accel_z_raw = (int16_t)((buffer[4] << 8) | buffer[5]);
+    Drone_IMU.temp_raw     = (int16_t)((buffer[6] << 8) | buffer[7]);
+    Drone_IMU.gyro_x_raw   = (int16_t)((buffer[8] << 8) | buffer[9]);
+    Drone_IMU.gyro_y_raw   = (int16_t)((buffer[10] << 8) | buffer[11]);
+    Drone_IMU.gyro_z_raw   = (int16_t)((buffer[12] << 8) | buffer[13]);
 
     // Update diagnostic byte counter
     uint32_t now = DRN_Millis();
     xx_byte_counter += 14;
     if (now - xx_last_bps_update_ms >= 1000) {
-        drn_mpu_data.bytes_per_second = xx_byte_counter;
+        Drone_IMU.bytes_per_second = xx_byte_counter;
         xx_byte_counter = 0;
         xx_last_bps_update_ms = now;
     }
@@ -241,37 +241,37 @@ esp_err_t DRN_MPU6050_Read_Raw(void) {
 }
 
 void DRN_MPU6050_Compute(void) {
-    if (!drn_mpu_data.is_calibrated) {
+    if (!Drone_IMU.is_calibrated) {
         // Cannot compute angles without calibration
         return;
     }
 
     // 1. Convert raw to physical units
-    drn_mpu_data.accel_x_g = (float)(drn_mpu_data.accel_x_raw - drn_mpu_data.accel_x_offset) / DRN_MPU6050_ACCEL_SCALE;
-    drn_mpu_data.accel_y_g = (float)(drn_mpu_data.accel_y_raw - drn_mpu_data.accel_y_offset) / DRN_MPU6050_ACCEL_SCALE;
-    drn_mpu_data.accel_z_g = (float)(drn_mpu_data.accel_z_raw - drn_mpu_data.accel_z_offset) / DRN_MPU6050_ACCEL_SCALE;
+    Drone_IMU.accel_x_g = (float)(Drone_IMU.accel_x_raw - Drone_IMU.accel_x_offset) / DRN_MPU6050_ACCEL_SCALE;
+    Drone_IMU.accel_y_g = (float)(Drone_IMU.accel_y_raw - Drone_IMU.accel_y_offset) / DRN_MPU6050_ACCEL_SCALE;
+    Drone_IMU.accel_z_g = (float)(Drone_IMU.accel_z_raw - Drone_IMU.accel_z_offset) / DRN_MPU6050_ACCEL_SCALE;
 
-    drn_mpu_data.gyro_x_dps = (float)(drn_mpu_data.gyro_x_raw - drn_mpu_data.gyro_x_offset) / DRN_MPU6050_GYRO_SCALE;
-    drn_mpu_data.gyro_y_dps = (float)(drn_mpu_data.gyro_y_raw - drn_mpu_data.gyro_y_offset) / DRN_MPU6050_GYRO_SCALE;
-    drn_mpu_data.gyro_z_dps = (float)(drn_mpu_data.gyro_z_raw - drn_mpu_data.gyro_z_offset) / DRN_MPU6050_GYRO_SCALE;
+    Drone_IMU.gyro_x_dps = (float)(Drone_IMU.gyro_x_raw - Drone_IMU.gyro_x_offset) / DRN_MPU6050_GYRO_SCALE;
+    Drone_IMU.gyro_y_dps = (float)(Drone_IMU.gyro_y_raw - Drone_IMU.gyro_y_offset) / DRN_MPU6050_GYRO_SCALE;
+    Drone_IMU.gyro_z_dps = (float)(Drone_IMU.gyro_z_raw - Drone_IMU.gyro_z_offset) / DRN_MPU6050_GYRO_SCALE;
 
     // 2. Calculate delta time
     uint32_t now = DRN_Millis();
-    drn_mpu_data.delta_time_s = (float)(now - drn_mpu_data.last_update_ms) / 1000.0f;
-    drn_mpu_data.last_update_ms = now;
+    Drone_IMU.delta_time_s = (float)(now - Drone_IMU.last_update_ms) / 1000.0f;
+    Drone_IMU.last_update_ms = now;
 
     // 3. Compute accelerometer angles
-    float accel_roll  = atan2f(drn_mpu_data.accel_y_g, drn_mpu_data.accel_z_g) * 57.2957795f;
-    float accel_pitch = atan2f(-drn_mpu_data.accel_x_g,
-                               sqrtf(drn_mpu_data.accel_y_g * drn_mpu_data.accel_y_g +
-                                     drn_mpu_data.accel_z_g * drn_mpu_data.accel_z_g)) * 57.2957795f;
+    float accel_roll  = atan2f(Drone_IMU.accel_y_g, Drone_IMU.accel_z_g) * 57.2957795f;
+    float accel_pitch = atan2f(-Drone_IMU.accel_x_g,
+                               sqrtf(Drone_IMU.accel_y_g * Drone_IMU.accel_y_g +
+                                     Drone_IMU.accel_z_g * Drone_IMU.accel_z_g)) * 57.2957795f;
 
     // 4. Complementary filter
-    drn_mpu_data.roll_deg  = DRN_MPU6050_FILTER_ALPHA * (drn_mpu_data.roll_deg  + drn_mpu_data.gyro_x_dps * drn_mpu_data.delta_time_s)
+    Drone_IMU.roll_deg  = DRN_MPU6050_FILTER_ALPHA * (Drone_IMU.roll_deg  + Drone_IMU.gyro_x_dps * Drone_IMU.delta_time_s)
                              + (1.0f - DRN_MPU6050_FILTER_ALPHA) * accel_roll;
-    drn_mpu_data.pitch_deg = DRN_MPU6050_FILTER_ALPHA * (drn_mpu_data.pitch_deg + drn_mpu_data.gyro_y_dps * drn_mpu_data.delta_time_s)
+    Drone_IMU.pitch_deg = DRN_MPU6050_FILTER_ALPHA * (Drone_IMU.pitch_deg + Drone_IMU.gyro_y_dps * Drone_IMU.delta_time_s)
                              + (1.0f - DRN_MPU6050_FILTER_ALPHA) * accel_pitch;
-    drn_mpu_data.yaw_deg   = drn_mpu_data.yaw_deg + drn_mpu_data.gyro_z_dps * drn_mpu_data.delta_time_s;
+    Drone_IMU.yaw_deg   = Drone_IMU.yaw_deg + Drone_IMU.gyro_z_dps * Drone_IMU.delta_time_s;
 }
 
 void DRN_MPU6050_Run_Task(uint32_t current_time_ms) {

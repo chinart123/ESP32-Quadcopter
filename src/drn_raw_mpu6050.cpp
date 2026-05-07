@@ -17,8 +17,8 @@
  *             drn_raw_mpu_data.roll_raw_deg,
  *             drn_raw_mpu_data.pitch_raw_deg);
  *     printf("FILT Roll=%.2f Pitch=%.2f\n",
- *             drn_mpu_data.roll_deg,
- *             drn_mpu_data.pitch_deg);
+ *             Drone_IMU.roll_deg,
+ *             Drone_IMU.pitch_deg);
  */
 #include "drn_raw_mpu6050.h"
 #include "drn_main_board_choose.h"

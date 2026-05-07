@@ -1,25 +1,76 @@
-# Bỏ qua các thư mục sinh ra khi build
+# ============================================================
+# .gitignore — ESP32-Quadcopter (ESP-IDF + Arduino IDE)
+# ============================================================
+
+# ------------------------------------------------------------
+# ESP-IDF build artifacts
+# ------------------------------------------------------------
 build/
-Binaries/
-Archives/
-
-# Bỏ qua các file cấu hình cũ của ESP-IDF
 sdkconfig.old
-sdkconfig.ci
+managed_components/
+dependencies.lock
+*.a
+*.o
+*.d
 
-# Bỏ qua các file cấu hình môi trường IDE (Eclipse / VS Code)
+# sdkconfig được COMMIT (chứa CONFIG_GDMA và cấu hình quan trọng)
+# sdkconfig.old KHÔNG commit (backup tự động)
+
+# ------------------------------------------------------------
+# Arduino IDE build artifacts
+# ------------------------------------------------------------
+Arduino_IDE/**/build/
+Arduino_IDE/**/*.elf
+Arduino_IDE/**/*.hex
+Arduino_IDE/**/*.bin
+*.cache
+
+# ------------------------------------------------------------
+# Eclipse / CDT (file .cproject, .project — workspace-specific)
+# ------------------------------------------------------------
 .settings/
-.metadata/
 .cproject
 .project
-.vscode/
 
-# Bỏ qua các file cấu hình Linter/Formatter (clang)
-.clangd/
-.clang-format
-.clang-tidy
-compile_commands.json
+# KHÔNG ignore: .clang-format, .clangd
+# Vì chúng cần thiết cho toàn bộ team
 
-# Bỏ qua các file rác của hệ điều hành
-.DS_Store
+# ------------------------------------------------------------
+# VS Code
+# ------------------------------------------------------------
+.vscode/ipch/
+.vscode/*.log
+
+# KHÔNG ignore: .vscode/settings.json
+# Vì có IDF path và include path cần thiết
+
+# ------------------------------------------------------------
+# OS artifacts
+# ------------------------------------------------------------
 Thumbs.db
+.DS_Store
+desktop.ini
+
+# ------------------------------------------------------------
+# Log và temp
+# ------------------------------------------------------------
+*.tmp
+*.temp
+*.log
+
+# ------------------------------------------------------------
+# KHÔNG ignore (cần commit):
+# ------------------------------------------------------------
+# src/, include/                ← active source code
+# main/main.cpp                 ← entry point
+# Arduino_IDE/*.ino             ← Arduino sketch
+# docs/, assets/                ← tài liệu và assets
+# sdkconfig                     ← cấu hình ESP-IDF (có GDMA)
+# CMakeLists.txt                ← build system
+# .clang-format, .clangd        ← code style
+
+# ------------------------------------------------------------
+# Old_Core_Files — CÂN NHẮC xóa hẳn khỏi repo
+# ------------------------------------------------------------
+# Hiện tại giữ lại để tham khảo, nhưng không build vào project
+# Có thể xóa sau khi port xong sang src/

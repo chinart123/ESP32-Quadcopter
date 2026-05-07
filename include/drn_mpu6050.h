@@ -78,7 +78,7 @@ typedef struct {
 /**
  * @brief Public motion data instance (accessible from main).
  */
-extern drn_mpu_motion_t drn_mpu_data;
+extern drn_mpu_motion_t Drone_IMU;
 
 /**
  * @brief Initialize the I2C bus and configure the MPU6050.
