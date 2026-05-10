@@ -37,9 +37,10 @@
   - [9.7 Giai Đoạn 2B (Bạn) — HITL: ESP32 Giả Lập IMU qua I2C](#97-giai-đoạn-2b-bạn--hitl-esp32-giả-lập-imu-qua-i2c)
   - [9.8 Giai Đoạn 3 — MPU6050 Thật + Tune PID](#98-giai-đoạn-3--mpu6050-thật--tune-pid)
   - [9.9 Phân Công Chân STM32F103 — Không Xung Đột](#99-phân-công-chân-stm32f103--không-xung-đột)
-  - [9.10 PWM Output — drn_timer_pwm.c](#910-pwm-output--drn_timer_pwmc)
+  - [9.10 PWM Output — drn_timer_pwm.c](#910-pwm-o()put--drn_timer_pwmc)
   - [9.11 UART CRSF Parser — STM32F103](#911-uart-crsf-parser--stm32f103)
   - [9.12 Bảng Roadmap Tổng Hợp](#912-bảng-roadmap-tổng-hợp)
+  - [9.13 Quy Trình Test Tín Hiệu RC (PWM Input)](#913-quy-trình-test-tín-hiệu-rc-pwm-input)
 ---
 
 ## 1. Bức Tranh Toàn Cảnh 
@@ -897,7 +898,76 @@ void USART1_IRQHandler(void) {
 | **4** | PID + Mixer đầy đủ | Bench test: frame tự cân bằng |
 
 ---
+### 9.13 Quy Trình Test Tín Hiệu RC (PWM Input)
+[⬆️](#-mục-lục)
 
+Để đảm bảo hệ thống đọc tín hiệu điều khiển không bị trễ (delay) và không bị nhiễu, quy trình test được chia làm 2 giai đoạn độc lập: Test thuật toán mềm và Test phần cứng thật.
+
+#### 🛠️ Giai đoạn 1: Test mô phỏng giữa 2 vi điều khiển (ESP32 TX và ESP32-S3 RX)
+**Mục đích:** Xác nhận thuật toán đọc 6 kênh PWM bằng ngắt phần cứng (Hardware Interrupt) trên FC hoạt động ổn định, đo chính xác độ rộng xung 1000µs - 2000µs mà không bị giật lag trước khi lắp mạch thật.
+
+**Quy trình thực hiện:**
+1. Dùng một board ESP32 phụ đóng vai trò là "Cục phát" (Giả lập bộ thu RX). Code con ESP32 này xuất ra 6 đường PWM mô phỏng cần gạt joystick.
+2. Dùng ESP32-S3 (Flight Controller) đóng vai trò "Cục nhận".
+3. Nối chung chân Mass (GND) giữa 2 board. Cắm 6 sợi dây từ chân phát của ESP32 sang 6 chân ngắt của ESP32-S3 (14, 15, 16, 39, 40, 41).
+
+**Đoạn code cốt lõi mô phỏng phát xung (Trên ESP32 TX):**
+```cpp
+// Dùng ledcWrite để sinh xung 50Hz (chu kỳ 20ms) - Chuẩn PWM Servo
+void setup() {
+  // Cấu hình timer: Tần số 50Hz, độ phân giải 16-bit
+  ledcSetup(0, 50, 16); 
+  ledcAttachPin(12, 0); // Xuất xung ra chân 12 giả lập kênh Throttle
+}
+
+void loop() {
+  // Bơm xung 1500us (Mức ga trung tâm)
+  // Tính toán: (1500us / 20000us) * 65535 = 4915
+  ledcWrite(0, 4915); 
+  delay(100);
+}
+```
+
+---
+
+#### 📡 Giai đoạn 2: Gắn mạch thu thực tế (WeAct ELRS Mini RX)
+**Mục đích:** Đưa hệ thống vào môi trường thực tế, đọc sóng không dây từ tay cầm (Transmitter) đã được giải mã thành tín hiệu PWM.
+
+**Quy trình thực hiện:**
+1. Rút bỏ board ESP32 phụ (cục phát giả lập) ra khỏi hệ thống.
+2. Cấp nguồn 5V cho mạch WeAct ELRS Mini RX V1.
+3. Thay thế 6 sợi dây vừa nãy, cắm từ các chân CH1-CH6 của mạch WeAct sang đúng 6 chân GPIO tương ứng trên ESP32-S3 (Theo sơ đồ mục 9.3).
+4. Bật tay cầm điều khiển, gạt các trục Joystick và quan sát dữ liệu in ra trên Serial Monitor của FC.
+
+**Đoạn code cốt lõi bắt xung (Trên ESP32-S3 Flight Controller):**
+Đây là linh hồn của hệ thống nhận diện thao tác, sử dụng ngắt cạnh (CHANGE) để tính toán chính xác thời gian xung mức CAO (High-time) bằng microsecond.
+
+```cpp
+volatile uint32_t rise_time = 0;
+volatile uint16_t ch_throttle_us = 1000;
+
+// Hàm ngắt (Interrupt Service Routine) đọc kênh Throttle (CH3 - GPIO 14)
+void IRAM_ATTR isr_ch3() {
+    if (digitalRead(14) == HIGH) {
+        // Ghi nhận thời điểm xung bắt đầu lên mức cao
+        rise_time = micros();
+    } else {
+        // Tính toán độ rộng xung khi xuống mức thấp
+        uint32_t width = micros() - rise_time;
+        // Lọc nhiễu: Chỉ nhận xung hợp lệ trong dải RC chuẩn
+        if (width >= 800 && width <= 2200) {
+            ch_throttle_us = (uint16_t)width;
+        }
+    }
+}
+
+void setup() {
+    pinMode(14, INPUT);
+    // Kích hoạt ngắt phần cứng mỗi khi có thay đổi trạng thái (Lên/Xuống)
+    attachInterrupt(digitalPinToInterrupt(14), isr_ch3, CHANGE);
+}
+```
+*Kết quả Giai đoạn 2 thành công khi dữ liệu `ch_throttle_us` mượt mà, phản hồi ngay lập tức khi đẩy cần ga trên tay cầm và không nhảy số loạn xạ (jitter).*
 *Tài liệu cập nhật lần cuối: Tháng 05/2026*
 *Platform A: ESP32-S3 Supermini + WeAct ELRS Mini RX V1*
 *Platform B: STM32F103C8T6 (bare-metal, học hỏi)*
