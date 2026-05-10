@@ -460,6 +460,7 @@ Không bao giờ cùng gắn vào 1 drone cùng lúc.
     Cách kiểm tra nhanh: Serial.println(digitalRead(39)) sau khi attachInterrupt.
     Nếu cần, thay bằng: GPIO 4 / 5 / 6 (không có conflict).
 ```
+```mermaid
 graph LR
     subgraph RX ["Mạch Nhận (WeAct ELRS Mini RX)"]
         direction TB
@@ -485,11 +486,9 @@ graph LR
         P41[GPIO 41]
     end
 
-    %% Cấp nguồn (Đỏ / Đen)
     VCC <== "Cấp nguồn 5V" ===> VBUS
     GND1 <== "Đồng bộ Mass" ===> GND2
 
-    %% 6 Dây tín hiệu PWM (Màu xanh/nét đứt hoặc nét liền)
     CH1 -- "PWM (1000-2000µs)" --> P16
     CH2 -- "PWM (1000-2000µs)" --> P15
     CH3 -- "PWM (1000-2000µs)" --> P14
@@ -497,7 +496,6 @@ graph LR
     CH5 -- "PWM (1000-2000µs)" --> P40
     CH6 -- "PWM (1000-2000µs)" --> P41
 
-    %% Tùy chỉnh màu sắc cho sơ đồ
     style VCC fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style VBUS fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style GND1 fill:#cccccc,stroke:#333333,stroke-width:2px
