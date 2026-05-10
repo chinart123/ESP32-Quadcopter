@@ -366,7 +366,7 @@ Mô tả: Sơ đồ block diagram toàn hệ thống với phần cứng hiện 
 - Upgrade:   Ghi chú upgrade path → WeAct ELRS RX → CRSF
 ```
 
-![Hardware Architecture Block Diagram](./hardware_architecture_hc12.svg)
+![Hardware Architecture Block Diagram](../assets/block_diagram_esp32_platform_a.svg)
 
 ---
 
@@ -387,7 +387,7 @@ Mô tả: Flowchart xử lý dữ liệu HC-12 trên STM32F103C8T6.
 - Upgrade path note: → CRSF parser khi có ELRS RX
 ```
 
-![FC Software Flow](./fc_software_flow_hc12.svg)
+![FC Software Flow](../assets/fc_software_flow_hc12.svg)
 
 ---
 
@@ -438,13 +438,11 @@ Hai platform TEST RIÊNG, ghi nhật ký RIÊNG, code RIÊNG.
 Không bao giờ cùng gắn vào 1 drone cùng lúc.
 ```
 
----
-
 ### 9.3 Sơ Đồ Nối Dây — WeAct ELRS Mini RX → ESP32-S3 Supermini 
 [⬆️](#-mục-lục)
 
-```
-[Mạch WeAct ELRS Mini RX V1]        [ESP32-S3 Supermini — Flight Controller]
+```text
+[Mạch WeAct ELRS Mini RX V1]         [ESP32-S3 Supermini — Flight Controller]
                                       
   CH1 (Roll)         ──────────────►  GPIO 16
   CH2 (Pitch)        ──────────────►  GPIO 15
@@ -460,6 +458,7 @@ Không bao giờ cùng gắn vào 1 drone cùng lúc.
     Cách kiểm tra nhanh: Serial.println(digitalRead(39)) sau khi attachInterrupt.
     Nếu cần, thay bằng: GPIO 4 / 5 / 6 (không có conflict).
 ```
+
 ```mermaid
 graph LR
     subgraph RX ["Mạch Nhận (WeAct ELRS Mini RX)"]
@@ -503,7 +502,7 @@ graph LR
     
     classDef signal fill:#e1f5fe,stroke:#03a9f4,stroke-width:2px;
     class CH1,CH2,CH3,CH4,CH5,CH6,P16,P15,P14,P39,P40,P41 signal;
----
+```
 
 ## ── PLATFORM A: ESP32-S3 Supermini (Dự Án Chính) ──
 
