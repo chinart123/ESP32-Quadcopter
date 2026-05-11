@@ -507,9 +507,9 @@ Không bao giờ cùng gắn vào 1 drone cùng lúc.
 
 ```mermaid
 graph LR
-    subgraph RX ["Receiver (WeAct ELRS Mini RX)"]
+    subgraph TX ["Simulator (ESP32 TX)"]
         direction TB
-        VCC[3.3V / VCC]
+        VCC[3.3V]
         GND1[GND]
         CH1[CH1 - Roll]
         CH2[CH2 - Pitch]
@@ -523,23 +523,23 @@ graph LR
         direction TB
         V33[3.3V]
         GND2[GND]
-        P16[GPIO 16]
-        P15[GPIO 15]
-        P14[GPIO 14]
-        P39[GPIO 39]
-        P40[GPIO 40]
-        P41[GPIO 41]
+        P2[GPIO 2]
+        P3[GPIO 3]
+        P4[GPIO 4]
+        P5[GPIO 5]
+        P6[GPIO 6]
+        P7[GPIO 7]
     end
 
     VCC <== "3.3V Power" ===> V33
     GND1 <== "Common GND" ===> GND2
 
-    CH1 -- "PWM (1000-2000µs)" --> P16
-    CH2 -- "PWM (1000-2000µs)" --> P15
-    CH3 -- "PWM (1000-2000µs)" --> P14
-    CH4 -- "PWM (1000-2000µs)" --> P39
-    CH5 -- "PWM (1000-2000µs)" --> P40
-    CH6 -- "PWM (1000-2000µs)" --> P41
+    CH1 -- "PWM (1000-2000µs)" --> P2
+    CH2 -- "PWM (1000-2000µs)" --> P3
+    CH3 -- "PWM (1000-2000µs)" --> P4
+    CH4 -- "PWM (1000-2000µs)" --> P5
+    CH5 -- "PWM (1000-2000µs)" --> P6
+    CH6 -- "PWM (1000-2000µs)" --> P7
 
     style VCC fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style V33 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
@@ -547,7 +547,7 @@ graph LR
     style GND2 fill:#cccccc,stroke:#333333,stroke-width:2px
     
     classDef signal fill:#e1f5fe,stroke:#03a9f4,stroke-width:2px;
-    class CH1,CH2,CH3,CH4,CH5,CH6,P16,P15,P14,P39,P40,P41 signal;
+    class CH1,CH2,CH3,CH4,CH5,CH6,P2,P3,P4,P5,P6,P7 signal;
 ```
 
 ## Platform A — ESP32-S3 Supermini (FC Chính)
