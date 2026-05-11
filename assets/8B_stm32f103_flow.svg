@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1820" font-family="Arial,Helvetica,sans-serif">
+<defs>
+<marker id="ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#374151"/></marker>
+<marker id="ar_g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16A34A"/></marker>
+<marker id="ar_r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#DC2626"/></marker>
+<marker id="ar_p" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#7C3AED"/></marker>
+<marker id="ar_o" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#D97706"/></marker>
+</defs>
+<rect width="760" height="1820" fill="#F8FAFC"/>
+<rect x="0" y="0" width="760" height="52" rx="0" fill="#78350F" stroke="#78350F" stroke-width="1.5" />
+<text x="380" y="22" text-anchor="middle" font-size="14" fill="white" font-weight="bold">Software Flow -- Platform B: STM32F103C8T6</text>
+<text x="380" y="41" text-anchor="middle" font-size="9" fill="#FED7AA" font-weight="normal">RC Input: USART1_IRQHandler + CRSF 0xC8  |  IMU: I2C 400 kHz  |  Output: TIM3 PWM</text>
+<rect x="10" y="58" width="740" height="22" rx="5" fill="#78350F" stroke="#78350F" stroke-width="1.5" />
+<text x="380" y="73" text-anchor="middle" font-size="9" fill="white" font-weight="bold">USART1_IRQHandler -- chay moi khi co byte moi tu ELRS RX / HC-12</text>
+<rect x="230" y="88" width="300" height="42" rx="21" fill="#1F2937" stroke="#374151" stroke-width="2" />
+<text x="380" y="115" text-anchor="middle" font-size="11" fill="white" font-weight="bold">UART RX Interrupt Triggered (USART1)</text>
+<line x1="380" y1="130" x2="380" y2="152" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="152" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="168" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">byte = USART1-&gt;DR &amp; 0xFF</text>
+<text x="380" y="182" text-anchor="middle" font-size="8" fill="#9CA3AF" font-weight="normal">(doc thanh ghi du lieu UART)</text>
+<line x1="380" y1="190" x2="380" y2="210" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<polygon points="380,210 476,244 380,278 284,244" fill="#FEF9C3" stroke="#D97706" stroke-width="1.6"/>
+<text x="380" y="238" text-anchor="middle" font-size="10" fill="#92400E" font-weight="bold">byte == 0xC8</text>
+<text x="380" y="254" text-anchor="middle" font-size="10" fill="#92400E" font-weight="normal">(CRSF sync byte)?</text>
+<line x1="284" y1="244" x2="185" y2="244" stroke="#16A34A" stroke-width="1.8"  marker-end="url(#ar_g)"/>
+<text x="278" y="234" text-anchor="end" font-size="8" fill="#16A34A" font-weight="bold">Yes</text>
+<rect x="25" y="212" width="152" height="52" rx="7" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.5" />
+<text x="101" y="230" text-anchor="middle" font-size="10" fill="#14532D" font-weight="bold">Reset rx_idx = 0</text>
+<text x="101" y="246" text-anchor="middle" font-size="10" fill="#166534" font-weight="normal">rx_buf[0] = byte</text>
+<text x="101" y="260" text-anchor="middle" font-size="9" fill="#166534" font-weight="normal">rx_idx = 1</text>
+<path d="M 25,244 Q -8,244 -8,172 Q -8,138 250,138" stroke="#16A34A" stroke-width="1.4" stroke-dasharray="4,2" fill="none" marker-end="url(#ar_g)"/>
+<text x="-18" y="188" text-anchor="end" font-size="8" fill="#16A34A" font-weight="normal">return</text>
+<line x1="380" y1="278" x2="380" y2="298" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="387" y="292" text-anchor="start" font-size="8" fill="#DC2626" font-weight="bold">No</text>
+<polygon points="380,298 476,332 380,366 284,332" fill="#FEF9C3" stroke="#D97706" stroke-width="1.6"/>
+<text x="380" y="326" text-anchor="middle" font-size="10" fill="#92400E" font-weight="bold">rx_idx &gt; 0</text>
+<text x="380" y="342" text-anchor="middle" font-size="10" fill="#92400E" font-weight="normal">(dang trong frame)?</text>
+<line x1="476" y1="332" x2="610" y2="332" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="480" y="326" text-anchor="start" font-size="8" fill="#DC2626" font-weight="bold">No</text>
+<rect x="610" y="310" width="130" height="38" rx="7" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2" />
+<text x="675" y="326" text-anchor="middle" font-size="10" fill="#374151" font-weight="bold">Ignore byte</text>
+<text x="675" y="340" text-anchor="middle" font-size="8" fill="#9CA3AF" font-weight="normal">(outside frame)</text>
+<path d="M 740,332 Q 780,332 780,138 Q 780,124 510,124" stroke="#9CA3AF" stroke-width="1.3" stroke-dasharray="4,2" fill="none" marker-end="url(#ar)"/>
+<line x1="380" y1="366" x2="380" y2="386" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="388" y="362" text-anchor="start" font-size="8" fill="#16A34A" font-weight="bold">Yes</text>
+<rect x="250" y="386" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="402" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">rx_buf[rx_idx++] = byte</text>
+<text x="380" y="416" text-anchor="middle" font-size="8" fill="#9CA3AF" font-weight="normal">(tich luy vao buffer)</text>
+<line x1="380" y1="424" x2="380" y2="444" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<polygon points="380,444 484,478 380,512 276,478" fill="#FEF9C3" stroke="#D97706" stroke-width="1.6"/>
+<text x="380" y="472" text-anchor="middle" font-size="10" fill="#92400E" font-weight="bold">rx_idx &gt;= rx_buf[1]+2</text>
+<text x="380" y="488" text-anchor="middle" font-size="10" fill="#92400E" font-weight="normal">(du do dai frame)?</text>
+<line x1="484" y1="478" x2="620" y2="478" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="488" y="472" text-anchor="start" font-size="8" fill="#DC2626" font-weight="bold">No</text>
+<rect x="620" y="456" width="130" height="38" rx="7" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2" />
+<text x="685" y="472" text-anchor="middle" font-size="10" fill="#374151" font-weight="bold">Tiep tuc</text>
+<text x="685" y="486" text-anchor="middle" font-size="8" fill="#9CA3AF" font-weight="normal">tich luy byte</text>
+<path d="M 750,478 Q 788,478 788,124 Q 788,110 510,110" stroke="#9CA3AF" stroke-width="1.3" stroke-dasharray="4,2" fill="none" marker-end="url(#ar)"/>
+<line x1="380" y1="512" x2="380" y2="532" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="388" y="508" text-anchor="start" font-size="8" fill="#16A34A" font-weight="bold">Yes</text>
+<rect x="250" y="532" width="260" height="38" rx="7" fill="#E0E7FF" stroke="#4338CA" stroke-width="1.5" />
+<text x="380" y="548" text-anchor="middle" font-size="10" fill="#1E1B4B" font-weight="bold">Validate CRC8-DVB-S2</text>
+<text x="380" y="562" text-anchor="middle" font-size="9" fill="#4338CA" font-weight="normal">crsf_validate_crc(rx_buf, rx_idx)</text>
+<line x1="380" y1="570" x2="380" y2="590" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<polygon points="380,590 476,624 380,658 284,624" fill="#FEF9C3" stroke="#D97706" stroke-width="1.6"/>
+<text x="380" y="618" text-anchor="middle" font-size="11" fill="#92400E" font-weight="bold">CRC OK ?</text>
+<line x1="284" y1="624" x2="185" y2="624" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="280" y="618" text-anchor="end" font-size="8" fill="#DC2626" font-weight="bold">No</text>
+<rect x="40" y="602" width="136" height="42" rx="7" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5" />
+<text x="108" y="618" text-anchor="middle" font-size="10" fill="#991B1B" font-weight="bold">Discard frame</text>
+<text x="108" y="634" text-anchor="middle" font-size="9" fill="#991B1B" font-weight="normal">rx_idx = 0</text>
+<path d="M 40,624 Q 0,624 0,110 Q 0,96 250,96" stroke="#EF4444" stroke-width="1.3" stroke-dasharray="4,2" fill="none" marker-end="url(#ar_r)"/>
+<line x1="380" y1="658" x2="380" y2="678" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="388" y="654" text-anchor="start" font-size="8" fill="#16A34A" font-weight="bold">Yes</text>
+<polygon points="380,678 486,712 380,746 274,712" fill="#FEF9C3" stroke="#D97706" stroke-width="1.6"/>
+<text x="380" y="706" text-anchor="middle" font-size="10" fill="#92400E" font-weight="bold">rx_buf[2] == 0x16</text>
+<text x="380" y="722" text-anchor="middle" font-size="10" fill="#92400E" font-weight="normal">(RC Channels Packed)?</text>
+<line x1="486" y1="712" x2="615" y2="712" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="490" y="706" text-anchor="start" font-size="8" fill="#DC2626" font-weight="bold">No</text>
+<rect x="615" y="680" width="140" height="54" rx="7" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2" />
+<text x="685" y="696" text-anchor="middle" font-size="10" fill="#374151" font-weight="bold">Other CRSF types</text>
+<text x="685" y="712" text-anchor="middle" font-size="8" fill="#9CA3AF" font-weight="normal">(link stats,</text>
+<text x="685" y="726" text-anchor="middle" font-size="8" fill="#9CA3AF" font-weight="normal">telemetry req...)</text>
+<line x1="380" y1="746" x2="380" y2="766" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="388" y="742" text-anchor="start" font-size="8" fill="#16A34A" font-weight="bold">Yes</text>
+<rect x="250" y="766" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="782" text-anchor="middle" font-size="10" fill="#374151" font-weight="bold">Unpack 16 kenh x 11 bit</text>
+<text x="380" y="796" text-anchor="middle" font-size="9" fill="#9CA3AF" font-weight="normal">crsf_unpack_channels(rx_buf)</text>
+<line x1="380" y1="804" x2="380" y2="820" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="820" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="836" text-anchor="middle" font-size="9" fill="#1E293B" font-weight="normal">ch[0..15] --&gt; us  |  last_pkt_ms = HAL_GetTick()</text>
+<text x="380" y="850" text-anchor="middle" font-size="8" fill="#9CA3AF" font-weight="normal">rx_idx = 0  (reset cho frame tiep theo)</text>
+<line x1="380" y1="858" x2="380" y2="874" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<path d="M 510,839 Q 798,839 798,96 Q 798,82 510,82" stroke="#7C3AED" stroke-width="1.6" stroke-dasharray="5,3" fill="none" marker-end="url(#ar_p)"/>
+<text x="808" y="486" text-anchor="start" font-size="8" fill="#7C3AED" font-weight="normal">ISR loop</text>
+<rect x="10" y="894" width="740" height="22" rx="5" fill="#78350F" stroke="#78350F" stroke-width="1.5" />
+<text x="380" y="909" text-anchor="middle" font-size="9" fill="white" font-weight="bold">MAIN LOOP -- 1 kHz (SysTick / TIM interrupt)</text>
+<rect x="50" y="916" width="660" height="496" rx="10" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5" />
+<rect x="250" y="934" width="260" height="38" rx="7" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5" />
+<text x="380" y="957" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Failsafe: HAL_GetTick() - last_pkt_ms &gt; 500 ms?</text>
+<line x1="380" y1="972" x2="380" y2="986" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="986" width="260" height="38" rx="7" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" />
+<text x="380" y="1009" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Doc ch[0..5]: Roll Pitch Throttle Yaw AUX1 AUX2</text>
+<line x1="380" y1="1024" x2="380" y2="1038" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="1038" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="1061" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Apply rates + expo --&gt; tinh setpoints (do/s)</text>
+<line x1="380" y1="1076" x2="380" y2="1090" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="1090" width="260" height="38" rx="7" fill="#FCE7F3" stroke="#DB2777" stroke-width="1.5" />
+<text x="380" y="1113" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Doc IMU qua I2C 400 kHz (MPU6050 addr 0x68)</text>
+<line x1="380" y1="1128" x2="380" y2="1142" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="1142" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="1165" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Complementary filter --&gt; Roll/Pitch/Yaw angles</text>
+<line x1="380" y1="1180" x2="380" y2="1194" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="1194" width="260" height="38" rx="7" fill="#BAE6FD" stroke="#0284C7" stroke-width="1.5" />
+<text x="380" y="1217" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">PID loops: Roll PID + Pitch PID + Yaw PID</text>
+<line x1="380" y1="1232" x2="380" y2="1246" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="1246" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="1269" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Mixer: tinh 4 gia tri motor thrust</text>
+<line x1="380" y1="1284" x2="380" y2="1298" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="1298" width="260" height="38" rx="7" fill="#BAE6FD" stroke="#0284C7" stroke-width="1.5" />
+<text x="380" y="1321" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">drn_timer_pwm_set() cho 4 kenh ESC (400 Hz)</text>
+<rect x="230" y="1428" width="300" height="46" rx="23" fill="#111827" stroke="#374151" stroke-width="2" />
+<text x="380" y="1456" text-anchor="middle" font-size="12" fill="white" font-weight="bold">OUTPUT: 4x ESC + Brushless Motor</text>
+<text x="380" y="1470" text-anchor="middle" font-size="8" fill="#94A3B8" font-weight="normal">TIM3 PA6/PA7/PB0/PB1  |  400 Hz</text>
+<line x1="380" y1="1412" x2="380" y2="1428" stroke="#374151" stroke-width="2"  marker-end="url(#ar)"/>
+<path d="M 530,1451 Q 598,1451 598,936 Q 598,926 510,926" stroke="#7C3AED" stroke-width="2" stroke-dasharray="5,3" fill="none" marker-end="url(#ar_p)"/>
+<text x="608" y="1172" text-anchor="start" font-size="8" fill="#7C3AED" font-weight="normal">Main Loop</text>
+</svg>

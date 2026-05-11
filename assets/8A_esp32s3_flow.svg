@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1780" font-family="Arial,Helvetica,sans-serif">
+<defs>
+<marker id="ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#374151"/></marker>
+<marker id="ar_g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16A34A"/></marker>
+<marker id="ar_r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#DC2626"/></marker>
+<marker id="ar_p" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#7C3AED"/></marker>
+<marker id="ar_o" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#D97706"/></marker>
+</defs>
+<rect width="760" height="1780" fill="#F8FAFC"/>
+<rect x="0" y="0" width="760" height="52" rx="0" fill="#1E3A8A" stroke="#1E3A8A" stroke-width="1.5" />
+<text x="380" y="22" text-anchor="middle" font-size="14" fill="white" font-weight="bold">Software Flow -- Platform A: ESP32-S3 Supermini</text>
+<text x="380" y="41" text-anchor="middle" font-size="9" fill="#93C5FD" font-weight="normal">RC Input: attachInterrupt() x6  |  IMU: I2C 400 kHz  |  Output: ledcWrite()</text>
+<rect x="10" y="58" width="740" height="22" rx="5" fill="#1E3A8A" stroke="#1E3A8A" stroke-width="1.5" />
+<text x="380" y="73" text-anchor="middle" font-size="9" fill="white" font-weight="bold">ISR -- chay tren ca 6 kenh (CHANGE trigger)</text>
+<rect x="240" y="88" width="280" height="42" rx="21" fill="#1F2937" stroke="#374151" stroke-width="2" />
+<text x="380" y="115" text-anchor="middle" font-size="11" fill="white" font-weight="bold">WeAct ELRS PWM --&gt; CHANGE Interrupt</text>
+<line x1="380" y1="130" x2="380" y2="152" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<polygon points="380,152 476,186 380,220 284,186" fill="#FEF9C3" stroke="#D97706" stroke-width="1.6"/>
+<text x="380" y="180" text-anchor="middle" font-size="10" fill="#92400E" font-weight="bold">digitalRead(pin)</text>
+<text x="380" y="196" text-anchor="middle" font-size="10" fill="#92400E" font-weight="normal">== HIGH ?</text>
+<line x1="284" y1="186" x2="180" y2="186" stroke="#16A34A" stroke-width="1.8"  marker-end="url(#ar_g)"/>
+<text x="278" y="176" text-anchor="end" font-size="8" fill="#16A34A" font-weight="bold">Yes</text>
+<rect x="32" y="158" width="140" height="44" rx="7" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.5" />
+<text x="102" y="176" text-anchor="middle" font-size="10" fill="#14532D" font-weight="bold">rise_time[i]</text>
+<text x="102" y="194" text-anchor="middle" font-size="10" fill="#166534" font-weight="normal">= micros()</text>
+<path d="M 32,186 Q 0,186 0,66 Q 0,22 240,22" stroke="#16A34A" stroke-width="1.4" stroke-dasharray="4,2" fill="none" marker-end="url(#ar_g)"/>
+<text x="-10" y="104" text-anchor="end" font-size="8" fill="#16A34A" font-weight="normal">return</text>
+<line x1="380" y1="220" x2="380" y2="240" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="387" y="234" text-anchor="start" font-size="8" fill="#DC2626" font-weight="bold">No</text>
+<rect x="250" y="240" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="256" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">width = micros() - rise_time[i]</text>
+<text x="380" y="270" text-anchor="middle" font-size="8" fill="#9CA3AF" font-weight="normal">(microseconds)</text>
+<line x1="380" y1="278" x2="380" y2="298" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<polygon points="380,298 476,332 380,366 284,332" fill="#FEF9C3" stroke="#D97706" stroke-width="1.6"/>
+<text x="380" y="326" text-anchor="middle" font-size="10" fill="#92400E" font-weight="bold">800 us &lt;= width</text>
+<text x="380" y="342" text-anchor="middle" font-size="10" fill="#92400E" font-weight="normal">&lt;= 2200 us ?</text>
+<line x1="476" y1="332" x2="625" y2="332" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="480" y="326" text-anchor="start" font-size="8" fill="#DC2626" font-weight="bold">No</text>
+<rect x="625" y="310" width="130" height="38" rx="7" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5" />
+<text x="690" y="326" text-anchor="middle" font-size="10" fill="#991B1B" font-weight="bold">Discard</text>
+<text x="690" y="342" text-anchor="middle" font-size="8" fill="#991B1B" font-weight="normal">(noise / glitch)</text>
+<path d="M 755,332 Q 790,332 790,22 Q 790,6 520,6" stroke="#EF4444" stroke-width="1.3" stroke-dasharray="4,2" fill="none" marker-end="url(#ar_r)"/>
+<line x1="380" y1="366" x2="380" y2="386" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<text x="388" y="362" text-anchor="start" font-size="8" fill="#16A34A" font-weight="bold">Yes</text>
+<rect x="250" y="386" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="402" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">ch_us[i] = (uint16_t) width</text>
+<text x="380" y="416" text-anchor="middle" font-size="8" fill="#9CA3AF" font-weight="normal">last_pkt_ms = millis()</text>
+<line x1="380" y1="424" x2="380" y2="440" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="440" width="260" height="28" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="458" text-anchor="middle" font-size="9" fill="#1E293B" font-weight="normal">new_data = true  --&gt;  return from ISR</text>
+<path d="M 510,454 Q 810,454 810,6 Q 810,-10 520,-10" stroke="#7C3AED" stroke-width="1.6" stroke-dasharray="5,3" fill="none" marker-end="url(#ar_p)"/>
+<text x="820" y="313" text-anchor="start" font-size="8" fill="#7C3AED" font-weight="normal">ISR loop</text>
+<rect x="10" y="484" width="740" height="22" rx="5" fill="#14532D" stroke="#14532D" stroke-width="1.5" />
+<text x="380" y="499" text-anchor="middle" font-size="9" fill="white" font-weight="bold">MAIN LOOP -- 1 kHz (timer interrupt)</text>
+<rect x="50" y="506" width="660" height="540" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.5" />
+<rect x="250" y="524" width="260" height="38" rx="7" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5" />
+<text x="380" y="547" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Failsafe: millis() - last_pkt_ms &gt; 500 ms?</text>
+<line x1="380" y1="562" x2="380" y2="576" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="576" width="260" height="38" rx="7" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" />
+<text x="380" y="599" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Doc ch_us[0..5]: Roll Pitch Throttle Yaw AUX1 AUX2</text>
+<line x1="380" y1="614" x2="380" y2="628" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="628" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="651" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Apply rates + expo --&gt; tinh setpoints (do/s)</text>
+<line x1="380" y1="666" x2="380" y2="680" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="680" width="260" height="38" rx="7" fill="#FCE7F3" stroke="#DB2777" stroke-width="1.5" />
+<text x="380" y="703" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Doc IMU qua I2C 400 kHz (MPU6050 addr 0x68)</text>
+<line x1="380" y1="718" x2="380" y2="732" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="732" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="755" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Complementary filter --&gt; Roll/Pitch/Yaw angles</text>
+<line x1="380" y1="770" x2="380" y2="784" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="784" width="260" height="38" rx="7" fill="#BAE6FD" stroke="#0284C7" stroke-width="1.5" />
+<text x="380" y="807" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">PID loops: Roll PID + Pitch PID + Yaw PID</text>
+<line x1="380" y1="822" x2="380" y2="836" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="836" width="260" height="38" rx="7" fill="white" stroke="#9CA3AF" stroke-width="1.5" />
+<text x="380" y="859" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">Mixer: tinh 4 gia tri motor thrust</text>
+<line x1="380" y1="874" x2="380" y2="888" stroke="#374151" stroke-width="1.8"  marker-end="url(#ar)"/>
+<rect x="250" y="888" width="260" height="38" rx="7" fill="#BAE6FD" stroke="#0284C7" stroke-width="1.5" />
+<text x="380" y="911" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="normal">ledcWrite() cho 4 kenh ESC (500 Hz / 4 kHz)</text>
+<rect x="230" y="1062" width="300" height="46" rx="23" fill="#111827" stroke="#374151" stroke-width="2" />
+<text x="380" y="1090" text-anchor="middle" font-size="12" fill="white" font-weight="bold">OUTPUT: 4x ESC + Brushless Motor</text>
+<text x="380" y="1104" text-anchor="middle" font-size="8" fill="#94A3B8" font-weight="normal">GPIO 4/5/6/7  |  500 Hz / 4 kHz</text>
+<line x1="380" y1="1046" x2="380" y2="1062" stroke="#374151" stroke-width="2"  marker-end="url(#ar)"/>
+<path d="M 530,1085 Q 600,1085 600,526 Q 600,516 510,516" stroke="#7C3AED" stroke-width="2" stroke-dasharray="5,3" fill="none" marker-end="url(#ar_p)"/>
+<text x="610" y="784" text-anchor="start" font-size="8" fill="#7C3AED" font-weight="normal">Main Loop</text>
+</svg>
