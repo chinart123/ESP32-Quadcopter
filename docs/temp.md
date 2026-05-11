@@ -443,7 +443,7 @@ Không bao giờ cùng gắn vào 1 drone cùng lúc.
 [⬆️](#-mục-lục)
 
 ```text
-[Mạch WeAct ELRS Mini RX V1]         [ESP32-S3 Supermini — Flight Controller]
+[WeAct ELRS Mini RX V1]              [ESP32-S3 Supermini — Flight Controller]
                                       
   CH1 (Roll)         ──────────────►  GPIO 16
   CH2 (Pitch)        ──────────────►  GPIO 15
@@ -451,20 +451,20 @@ Không bao giờ cùng gắn vào 1 drone cùng lúc.
   CH4 (Yaw)          ──────────────►  GPIO 39  ⚠️ JTAG MTCK
   CH5 (AUX 1)        ──────────────►  GPIO 40  ⚠️ JTAG MTDO
   CH6 (AUX 2)        ──────────────►  GPIO 41  ⚠️ JTAG MTDI
-  5V  (VCC)          ──────────────►  5V / VBUS
+  VCC / VBAT         ──────────────►  3.3V
   GND                ──────────────►  GND
 
-⚠️  GPIO 39/40/41 mặc định được chip ESP32-S3 dùng cho JTAG debugger.
-    Nếu đọc luôn 0 hoặc giá trị rác → JTAG đang chiếm dụng 3 chân này.
-    Cách kiểm tra nhanh: Serial.println(digitalRead(39)) sau khi attachInterrupt.
-    Nếu cần, thay bằng: GPIO 4 / 5 / 6 (không có conflict).
+⚠️ NOTE: GPIO 39/40/41 are assigned to the JTAG debugger by default on ESP32-S3.
+   If the reading is always 0 or garbage → JTAG is occupying these 3 pins.
+   Quick check: Serial.println(digitalRead(39)) after attachInterrupt().
+   If needed, remap to: GPIO 4 / 5 / 6 (no conflict).
 ```
 
 ```mermaid
 graph LR
-    subgraph RX ["Mạch Nhận (WeAct ELRS Mini RX)"]
+    subgraph RX ["Receiver (WeAct ELRS Mini RX)"]
         direction TB
-        VCC[5V / VCC]
+        VCC[3.3V / VCC]
         GND1[GND]
         CH1[CH1 - Roll]
         CH2[CH2 - Pitch]
@@ -474,9 +474,9 @@ graph LR
         CH6[CH6 - AUX2]
     end
 
-    subgraph FC ["Não Máy Bay (ESP32-S3 Supermini)"]
+    subgraph FC ["Flight Controller (ESP32-S3 Supermini)"]
         direction TB
-        VBUS[5V / VBUS]
+        V33[3.3V]
         GND2[GND]
         P16[GPIO 16]
         P15[GPIO 15]
@@ -486,8 +486,8 @@ graph LR
         P41[GPIO 41]
     end
 
-    VCC <== "Cấp nguồn 5V" ===> VBUS
-    GND1 <== "Đồng bộ Mass" ===> GND2
+    VCC <== "3.3V Power" ===> V33
+    GND1 <== "Common GND" ===> GND2
 
     CH1 -- "PWM (1000-2000µs)" --> P16
     CH2 -- "PWM (1000-2000µs)" --> P15
@@ -497,7 +497,7 @@ graph LR
     CH6 -- "PWM (1000-2000µs)" --> P41
 
     style VCC fill:#ffcccc,stroke:#ff0000,stroke-width:2px
-    style VBUS fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style V33 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style GND1 fill:#cccccc,stroke:#333333,stroke-width:2px
     style GND2 fill:#cccccc,stroke:#333333,stroke-width:2px
     
