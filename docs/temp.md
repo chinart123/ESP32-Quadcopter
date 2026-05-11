@@ -511,12 +511,12 @@ graph LR
         direction TB
         VCC[3.3V]
         GND1[GND]
-        CH1[CH1 - Roll]
+        CH1[CH1 - Throttle]
         CH2[CH2 - Pitch]
-        CH3[CH3 - Throttle]
+        CH3[CH3 - Roll]
         CH4[CH4 - Yaw]
-        CH5[CH5 - AUX1]
-        CH6[CH6 - AUX2]
+        CH5[CH5 - AUX1/Arm]
+        CH6[CH6 - AUX2/Mode]
     end
 
     subgraph FC ["Flight Controller (ESP32-S3 Supermini)"]
@@ -534,12 +534,12 @@ graph LR
     VCC <== "3.3V Power" ===> V33
     GND1 <== "Common GND" ===> GND2
 
-    CH1 -- "PWM (1000-2000µs)" --> P2
-    CH2 -- "PWM (1000-2000µs)" --> P3
-    CH3 -- "PWM (1000-2000µs)" --> P4
-    CH4 -- "PWM (1000-2000µs)" --> P5
-    CH5 -- "PWM (1000-2000µs)" --> P6
-    CH6 -- "PWM (1000-2000µs)" --> P7
+    CH1 -- "PWM Baseline: 1000µs" --> P2
+    CH2 -- "PWM Baseline: 1500µs" --> P3
+    CH3 -- "PWM Baseline: 1500µs" --> P4
+    CH4 -- "PWM Baseline: 1500µs" --> P5
+    CH5 -- "PWM Baseline: 1000µs" --> P6
+    CH6 -- "PWM Baseline: 1000µs" --> P7
 
     style VCC fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style V33 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
