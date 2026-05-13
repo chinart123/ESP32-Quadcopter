@@ -28,9 +28,9 @@ void drn_main_board_choose_Init(void) {
     DRN_Motor_PWM_Init();
     DRN_Button_Init();
     // Thay thế block MPU6050 cũ bằng bản raw:
-    if (DRN_RawMPU6050_Init() == ESP_OK) {
-        DRN_RawMPU6050_Calibrate(); 
-    }
+    //if (DRN_RawMPU6050_Init() == ESP_OK) {
+    //    DRN_RawMPU6050_Calibrate(); 
+    //}
 }
 
 void drn_main_board_choose_Delay_ms(unsigned int ms) {

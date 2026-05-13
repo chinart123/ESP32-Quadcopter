@@ -21,7 +21,7 @@ static const char* TAG = "DRN_MOTOR";
 #define MOTOR_PWM_DUTY_RES     LEDC_TIMER_10_BIT
 #define MOTOR_PWM_TIMER        LEDC_TIMER_0
 
-static const uint8_t motor_gpios[MOTOR_COUNT] = {1, 2, 3, 4};
+static const uint8_t motor_gpios[MOTOR_COUNT] = {13, 12, 11, 10};
 static const uint8_t motor_channels[MOTOR_COUNT] = {0, 1, 2, 3};
 
 static uint32_t xx_duties[MOTOR_COUNT] = {0};
