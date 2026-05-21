@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalman Filter vs Complementary Filter — IMU Simulation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root { --bg: #fff; --bg2: #f4f4f0; --bg3: #eeeee9; --text: #2c2c2a; --text2: #73726c; --border: rgba(0,0,0,0.12); --green: #1D9E75; --amber: #BA7517; --blue: #185FA5; --red: #A32D2D; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1a1a18; --bg2: #252523; --bg3: #2e2e2b; --text: #e2e0d6; --text2: #9c9a92; --border: rgba(255,255,255,0.12); }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 780px; margin: 0 auto; font-size: 14px; line-height: 1.6; }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .eq-box { border-radius: 10px; padding: 14px; background: var(--bg2); }
+  .eq-box.predict { border-left: 3px solid var(--green); }
+  .eq-box.update { border-left: 3px solid var(--blue); }
+  .eq-label { font-size: 11px; font-weight: 500; letter-spacing: .05em; margin-bottom: 8px; }
+  .eq-label.g { color: var(--green); }
+  .eq-label.b { color: var(--blue); }
+  code { font-family: "SF Mono", Consolas, monospace; font-size: 12px; display: block; margin: 3px 0; color: var(--text); }
+  .hint-txt { font-size: 11px; color: var(--text2); margin-top: 8px; }
+  .k-bar-wrap { background: var(--bg2); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
+  .bar-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--green); border-radius: 4px; transition: width .4s ease; }
+  .k-big { font-size: 22px; font-weight: 500; min-width: 70px; text-align: right; }
+  .chart-wrap { position: relative; width: 100%; height: 260px; margin-bottom: 8px; }
+  .legend { display: flex; gap: 16px; font-size: 12px; color: var(--text2); margin-bottom: 14px; flex-wrap: wrap; }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .line-solid { display: inline-block; width: 22px; height: 2px; vertical-align: middle; }
+  .line-dash { display: inline-block; width: 22px; height: 0; border-top: 2px dashed var(--amber); vertical-align: middle; }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .metric { background: var(--bg2); border-radius: 8px; padding: 10px; text-align: center; }
+  .metric-val { font-size: 20px; font-weight: 500; }
+  .metric-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .controls { background: var(--bg2); border-radius: 10px; padding: 14px; }
+  .ctrl-title { font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+  .slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .slider-row label { font-size: 12px; color: var(--text2); min-width: 120px; }
+  .slider-row input[type=range] { flex: 1; }
+  .slider-val { font-family: "SF Mono", Consolas, monospace; font-size: 12px; font-weight: 500; min-width: 46px; text-align: right; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  button { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 6px 14px; font-size: 12px; cursor: pointer; color: var(--text); flex: 1; transition: background .15s; }
+  button:hover { background: var(--bg3); }
+  button.active { background: var(--bg3); font-weight: 500; border-color: rgba(0,0,0,0.25); }
+  .sc-hint { font-size: 11px; color: var(--text2); margin-top: 10px; padding: 8px; background: var(--bg); border-radius: 7px; border: 1px solid var(--border); min-height: 36px; }
+</style>
+</head>
+<body>
+
+<h1>Kalman Filter vs Complementary Filter</h1>
+<p class="subtitle">Mô phỏng tương tác trên dữ liệu IMU (MPU6050 @ 200 Hz) — Project Windify</p>
+
+<div class="grid2">
+  <div class="eq-box predict">
+    <div class="eq-label g">① PREDICT — tích hợp gyro</div>
+    <code>x̂ = x̂ + ω·Δt</code>
+    <code>P = P + Q</code>
+    <div class="hint-txt">Như phần bên trái của CF. P tăng → bất định tích lũy theo drift gyro</div>
+  </div>
+  <div class="eq-box update">
+    <div class="eq-label b">② UPDATE — hiệu chỉnh accel</div>
+    <code>K = P / (P + R)</code>
+    <code>x̂ = x̂ + K·(z − x̂)</code>
+    <code>P = (1−K)·P</code>
+    <div class="hint-txt">K tự tính thay vì alpha cố định. Sau update P giảm → filter tự tin hơn</div>
+  </div>
+</div>
+
+<div class="k-bar-wrap">
+  <div style="flex:1">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:5px">Kalman Gain <strong>K</strong> ở steady state — tương đương <code style="display:inline;font-size:11px">(1 − α)</code> của CF</div>
+    <div class="bar-track"><div id="kbar" class="bar-fill" style="width:6%"></div></div>
+  </div>
+  <div style="text-align:right;min-width:70px">
+    <div id="kval" class="k-big" style="color:var(--green)">0.06</div>
+    <div style="font-size:10px;color:var(--text2)">K cuối cùng</div>
+  </div>
+</div>
+
+<div class="chart-wrap">
+  <canvas id="kfChart" aria-label="Biểu đồ so sánh góc thực, Kalman Filter và Complementary Filter"></canvas>
+</div>
+
+<div class="legend">
+  <span><span class="line-solid" style="background:#888780"></span>Góc thực</span>
+  <span><span class="line-solid" style="background:var(--green)"></span>Kalman Filter</span>
+  <span><span class="line-dash"></span>Comp. Filter (α cố định)</span>
+</div>
+
+<div class="metrics">
+  <div class="metric">
+    <div id="rmse-kf" class="metric-val" style="color:var(--green)">—</div>
+    <div class="metric-lbl">RMSE Kalman (°)</div>
+  </div>
+  <div class="metric">
+    <div id="rmse-cf" class="metric-val" style="color:var(--amber)">—</div>
+    <div class="metric-lbl">RMSE Comp. Filter (°)</div>
+  </div>
+  <div class="metric">
+    <div id="impr" class="metric-val">—</div>
+    <div class="metric-lbl">KF cải thiện</div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="ctrl-title">Điều chỉnh tham số</div>
+
+  <div class="slider-row">
+    <label>Q — process noise</label>
+    <input type="range" id="qsl" min="0.0005" max="0.05" step="0.0005" value="0.002" oninput="onP()">
+    <span id="qd" class="slider-val">0.0020</span>
+  </div>
+  <div class="slider-row">
+    <label>R — meas. noise (accel)</label>
+    <input type="range" id="rsl" min="0.05" max="8" step="0.05" value="0.5" oninput="onP()">
+    <span id="rd" class="slider-val">0.50</span>
+  </div>
+  <div class="slider-row">
+    <label>CF alpha</label>
+    <input type="range" id="asl" min="0.8" max="0.999" step="0.001" value="0.98" oninput="onP()">
+    <span id="ad" class="slider-val">0.980</span>
+  </div>
+
+  <div class="btn-row">
+    <button id="b-normal" onclick="setSc('normal')">Bình thường</button>
+    <button id="b-noisy" onclick="setSc('noisy')">Accel rất nhiễu</button>
+    <button id="b-maneuver" onclick="setSc('maneuver')">Cơ động đột ngột</button>
+  </div>
+  <div id="sc-hint" class="sc-hint"></div>
+</div>
+
+<script>
+const N=300, DT=0.005;
+let curSc='normal', chart;
+
+function gr(){
+  let u=0,v=0;
+  while(!u)u=Math.random();while(!v)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+const gN=Array.from({length:N},gr), aN=Array.from({length:N},gr), aN2=Array.from({length:N},gr);
+
+const scenarios={
+  normal:{fn:()=>Array.from({length:N},(_,i)=>25*Math.sin(i*0.022)),nm:1,
+    hint:'Drone lắc nhẹ, nhiễu vừa. KF và CF tương tự ở steady state nhưng KF hội tụ nhanh hơn lúc khởi động (P lớn → K lớn → tin accel nhiều hơn).'},
+  noisy:{fn:()=>Array.from({length:N},(_,i)=>20*Math.sin(i*0.018)),nm:3,
+    hint:'Motor rung mạnh → accel nhiễu cao (×3). Tăng R → KF giữ K nhỏ → bám gyro nhiều hơn, output mượt hơn. CF với alpha cố định bị kéo bởi nhiễu accel.'},
+  maneuver:{fn:()=>Array.from({length:N},(_,i)=>{
+    if(i<60)return 0;if(i<110)return 30*(i-60)/50;if(i<220)return 30;return 30-25*(i-220)/80;
+  }),nm:1,
+    hint:'Drone tilt đột ngột 30°. Ban đầu KF chưa hội tụ (P=10 → K lớn) → phản ứng nhanh. Sau đó P nhỏ dần → K nhỏ → bám gyro. CF lag cố định suốt.'}
+};
+
+function simulate(Q,R,alpha){
+  const sc=scenarios[curSc];
+  const tr=sc.fn();
+  const rates=tr.map((a,i)=>i===0?0:(tr[i]-tr[i-1])/DT);
+  const nm=sc.nm;
+  let cf=0,kf=0,P=10;
+  const cfD=[],kfD=[],kH=[];
+  let ssKF=0,ssCF=0;
+  for(let i=0;i<N;i++){
+    const gm=rates[i]+gN[i]*Math.sqrt(Q)/DT;
+    const am=tr[i]+aN[i]*Math.sqrt(R)*nm+(nm>1?aN2[i]*0.4:0);
+    cf=alpha*(cf+gm*DT)+(1-alpha)*am;
+    kf+=gm*DT; P+=Q;
+    const K=P/(P+R);
+    kf+=K*(am-kf); P=(1-K)*P;
+    cfD.push(+cf.toFixed(3)); kfD.push(+kf.toFixed(3)); kH.push(+K.toFixed(5));
+    if(i>=50){ssKF+=(kf-tr[i])**2; ssCF+=(cf-tr[i])**2;}
+  }
+  const n=N-50;
+  return{tr,cfD,kfD,
+    rmKF:Math.sqrt(ssKF/n).toFixed(3),rmCF:Math.sqrt(ssCF/n).toFixed(3),
+    lastK:kH[kH.length-1],
+    lbs:Array.from({length:N},(_,i)=>(i*DT).toFixed(2))};
+}
+
+function initChart(){
+  const ctx=document.getElementById('kfChart').getContext('2d');
+  const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridC=isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)';
+  const tickC=isDark?'#9c9a92':'#73726c';
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{labels:[],datasets:[
+      {label:'Góc thực',data:[],borderColor:'#888780',borderWidth:1.5,pointRadius:0,tension:0.2},
+      {label:'Kalman',data:[],borderColor:'#1D9E75',borderWidth:2.5,pointRadius:0,tension:0.3},
+      {label:'CF',data:[],borderColor:'#BA7517',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[6,3]}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{title:{display:true,text:'Thời gian (s)',font:{size:11},color:tickC},
+           ticks:{maxTicksLimit:8,font:{size:11},color:tickC},grid:{color:gridC}},
+        y:{title:{display:true,text:'Góc (°)',font:{size:11},color:tickC},
+           ticks:{font:{size:11},color:tickC},grid:{color:gridC}}
+      }
+    }
+  });
+}
+
+function onP(){
+  const Q=+document.getElementById('qsl').value;
+  const R=+document.getElementById('rsl').value;
+  const alpha=+document.getElementById('asl').value;
+  document.getElementById('qd').textContent=Q.toFixed(4);
+  document.getElementById('rd').textContent=R.toFixed(2);
+  document.getElementById('ad').textContent=alpha.toFixed(3);
+  const res=simulate(Q,R,alpha);
+  chart.data.labels=res.lbs;
+  chart.data.datasets[0].data=res.tr.map(v=>+v.toFixed(2));
+  chart.data.datasets[1].data=res.kfD;
+  chart.data.datasets[2].data=res.cfD;
+  chart.update();
+  document.getElementById('rmse-kf').textContent=res.rmKF;
+  document.getElementById('rmse-cf').textContent=res.rmCF;
+  const pct=((1-res.rmKF/res.rmCF)*100).toFixed(1);
+  const el=document.getElementById('impr');
+  el.textContent=(pct>0?'+':'')+pct+'%';
+  el.style.color=pct>0?'var(--green)':'var(--red)';
+  const K=res.lastK;
+  document.getElementById('kval').textContent=K.toFixed(4);
+  document.getElementById('kbar').style.width=Math.min(K*600,100)+'%';
+}
+
+function setSc(name){
+  curSc=name;
+  ['normal','noisy','maneuver'].forEach(s=>{
+    document.getElementById('b-'+s).className=s===name?'active':'';
+  });
+  document.getElementById('sc-hint').textContent=scenarios[name].hint;
+  onP();
+}
+
+initChart(); setSc('normal');
+</script>
+</body>
+</html>
