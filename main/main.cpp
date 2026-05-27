@@ -10,7 +10,7 @@
  * GPIO 4 → Single click → Toggle Gate (mở/đóng)
  * GPIO 5 → Single click → Cycle duty: 0→20→50→70→90→0 (%)
  */
-
+  
 #include "drn_main_board_choose.h"
 #include "drn_motor_pwm.h"
 #include "drn_button.h"
