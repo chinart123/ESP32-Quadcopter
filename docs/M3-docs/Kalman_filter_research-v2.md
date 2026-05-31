@@ -4,6 +4,20 @@
 
 ---
 
+## Icon Legend
+
+| Icon | Ý nghĩa |
+|---|---|
+| 🕳️ | Missing — chưa có, cần viết mới |
+| ⚙️ | Incomplete — có rồi nhưng chưa đủ dùng |
+| ❓ | Defense risk — điểm yếu nếu bị hỏi |
+| 🐛 | Bug — sai hoặc misleading trong code/comment |
+| 📐 | Numerical/Visual — thiếu ví dụ số hoặc diagram |
+| 🧩 | Theory↔Code — chưa link lý thuyết vào code thực tế |
+| ✅ | Done |
+
+---
+
 ## Mục lục
 
 1. [Tại sao cần Kalman Filter?](#1-tại-sao-cần-kalman-filter)
@@ -15,8 +29,9 @@
 7. [Example 4 — α-β-γ filter (giải quyết lag error)](#7-example-4--α-β-γ-filter-giải-quyết-lag-error)
 8. [KF 1D — Gain tính động (bước nhảy quan trọng nhất)](#8-kf-1d--gain-tính-động-bước-nhảy-quan-trọng-nhất)
 9. [KF 1D with Process Noise Q](#9-kf-1d-with-process-noise-q)
-10. [Multivariate Kalman Filter — Tham khảo tiếp theo](#10-multivariate-kalman-filter--tham-khảo-tiếp-theo)
-11. [Drone Integration — Project Windify](#11-drone-integration--project-windify)
+10. [Multivariate Kalman Filter](#10-multivariate-kalman-filter)
+11. [Limitations & Assumptions](#11-limitations--assumptions)
+12. [Drone Integration — Project Windify](#12-drone-integration--project-windify)
 
 ---
 
@@ -379,9 +394,38 @@ Trong đó $Q$ (process noise variance) thể hiện mức độ "tin tưởng v
 
 ---
 
-## 10. Multivariate Kalman Filter — Tham khảo tiếp theo
+### 📐 ✅ Numerical Trace — KF 1D with Q (ví dụ tính tay)
 
-Phần này mở rộng KF 1D sang **vector và matrix** để xử lý nhiều biến đồng thời (ví dụ: roll + pitch + gyro bias cùng lúc).
+> **Bối cảnh:** Đo nhiệt độ cảm biến trên drone đang hover. True value ≈ 25°C.  
+> Params: `r = 4.0` (sensor noise variance), `Q = 0.5` (process noise), `p₀ = 10.0`, `x̂₀ = 20.0°C`
+
+| n | z_n (°C) | p_{n,n-1} | K_n | x̂_{n,n} (°C) | p_{n,n} |
+|---|---|---|---|---|---|
+| 0 | — | — | — | 20.00 | 10.00 |
+| 1 | 24.5 | 10.50 | 0.724 | 23.26 | 2.90 |
+| 2 | 25.1 | 3.40 | 0.459 | 24.16 | 1.84 |
+| 3 | 24.8 | 2.34 | 0.369 | 24.38 | 1.48 |
+| 4 | 25.3 | 1.98 | 0.331 | 24.68 | 1.32 |
+| 5 | 25.0 | 1.82 | 0.313 | 24.78 | 1.25 |
+| 6 | 25.2 | 1.75 | 0.305 | 24.91 | 1.22 |
+| 7 | 24.9 | 1.72 | 0.301 | 24.88 | 1.20 |
+| 8 | 25.1 | 1.70 | 0.298 | 24.94 | 1.19 |
+
+> `p_{n,n-1} = p_{n-1,n-1} + Q` (Q=0.5 được cộng mỗi bước predict)  
+> `K_n = p_{n,n-1} / (p_{n,n-1} + r)`  
+> `x̂_{n,n} = x̂_{n,n-1} + K_n * (z_n - x̂_{n,n-1})`  
+> `p_{n,n} = (1 - K_n) * p_{n,n-1}`
+
+**Insights từ bảng:**
+- **K_n không về 0** — nhờ Q=0.5 bơm lại uncertainty mỗi bước, filter luôn lắng nghe measurement (so sánh: nếu Q=0 thì K_n → 0 sau ~10 iterations)
+- **p ổn định ở ~1.19** thay vì tiếp tục giảm — đây là "steady-state" khi Q và r cân bằng nhau
+- **x̂ hội tụ về ~25°C** dù initial guess = 20°C — KF tự kéo estimate về đúng hướng chỉ qua measurement
+
+---
+
+## 10. Multivariate Kalman Filter
+
+Phần này mở rộng KF 1D sang **vector và matrix** để xử lý nhiều biến đồng thời (ví dụ: roll + gyro bias cùng lúc).
 
 > **Nguồn đọc:**
 > - [kalmanfilter.net/kalmanmulti.html](https://kalmanfilter.net/kalmanmulti.html) — Multivariate KF
@@ -427,7 +471,110 @@ $$\mathbf{P}_{n,n} = (\mathbf{I} - \mathbf{K}_n\mathbf{H})\mathbf{P}_{n,n-1}(\ma
 
 ---
 
-## 11. Drone Integration — Project Windify
+### 🕳️ ✅ Matrix cụ thể cho drone — State [angle, gyro_bias]
+
+![KF Matrix Diagram](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAwIiBoZWlnaHQ9IjUyMCIgdmlld0JveD0iMCAwIDcwMCA1MjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZm9udC1mYW1pbHk9InVpLXNhbnMtc2VyaWYsIHN5c3RlbS11aSwgc2Fucy1zZXJpZiI+CgogIDxkZWZzPgogICAgPG1hcmtlciBpZD0iYXJyb3ciIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOCIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjYiIG1hcmtlckhlaWdodD0iNiIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPgogICAgICA8cGF0aCBkPSJNMiAxTDggNUwyIDkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzg4ODc4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogICAgPC9tYXJrZXI+CiAgICA8bWFya2VyIGlkPSJhcnJvdy10ZWFsIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjgiIHJlZlk9IjUiIG1hcmtlcldpZHRoPSI2IiBtYXJrZXJIZWlnaHQ9IjYiIG9yaWVudD0iYXV0by1zdGFydC1yZXZlcnNlIj4KICAgICAgPHBhdGggZD0iTTIgMUw4IDVMMiA5IiBmaWxsPSJub25lIiBzdHJva2U9IiMwRjZFNTYiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICAgIDwvbWFya2VyPgogICAgPG1hcmtlciBpZD0iYXJyb3ctYW1iZXIiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOCIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjYiIG1hcmtlckhlaWdodD0iNiIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPgogICAgICA8cGF0aCBkPSJNMiAxTDggNUwyIDkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzg1NEYwQiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogICAgPC9tYXJrZXI+CiAgPC9kZWZzPgoKICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjcwMCIgaGVpZ2h0PSI1MjAiIGZpbGw9IiNGQUZBRjkiIHJ4PSIxMiIvPgoKICA8IS0tIOKVkOKVkOKVkCBTVEFURSBWRUNUT1IgKHRvcC1sZWZ0KSDilZDilZDilZAgLS0+CiAgPHJlY3QgeD0iMzAiIHk9IjI4IiB3aWR0aD0iMTc1IiBoZWlnaHQ9IjgwIiByeD0iOCIgZmlsbD0iI0VFRURGRSIgc3Ryb2tlPSIjQUZBOUVDIiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSIxMTciIHk9IjU0IiAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzNDMzQ4OSI+U3RhdGUgdmVjdG9yIHg8L3RleHQ+CiAgPHRleHQgeD0iMTE3IiB5PSI3MyIgIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM1MzRBQjciIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPlsgzrggICAgICDOuMyHX2JpYXMgXTwvdGV4dD4KICA8dGV4dCB4PSIxMTciIHk9IjkyIiAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzdGNzdERCI+YW5nbGUgICAgICAgZ3lybyBiaWFzPC90ZXh0PgoKICA8IS0tIOKVkOKVkOKVkCBaX04gTUVBU1VSRU1FTlQgKHRvcC1jZW50ZXIpIOKVkOKVkOKVkCAtLT4KICA8cmVjdCB4PSIyNjIiIHk9IjI4IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjY1IiByeD0iOCIgZmlsbD0iI0ZBRUNFNyIgc3Ryb2tlPSIjRjA5OTdCIiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSIzNTAiIHk9IjUyIiAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzcxMkIxMyI+eiYjeDIwOTk7IG1lYXN1cmVtZW50PC90ZXh0PgogIDx0ZXh0IHg9IjM1MCIgeT0iNzIiICB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTkzQzFEIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj5hY2NlbCBhbmdsZSAozrhfYWNjZWwpPC90ZXh0PgoKICA8IS0tIOKVkOKVkOKVkCBGIE1BVFJJWCAobGVmdC1taWQpIOKVkOKVkOKVkCAtLT4KICA8cmVjdCB4PSIzMCIgeT0iMTU1IiB3aWR0aD0iMTc1IiBoZWlnaHQ9IjExNSIgcng9IjgiIGZpbGw9IiNFMUY1RUUiIHN0cm9rZT0iIzVEQ0FBNSIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPHRleHQgeD0iMTE3IiB5PSIxNzgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSI2MDAiIGZpbGw9IiMwODUwNDEiPkYg4oCUIHRyYW5zaXRpb248L3RleHQ+CiAgPHRleHQgeD0iNzIiICB5PSIyMDIiIHRleHQtYW5jaG9yPSJzdGFydCIgIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMwRjZFNTYiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPlsgMSAgICAmI3gyMjEyO2R0IF08L3RleHQ+CiAgPHRleHQgeD0iNzIiICB5PSIyMjIiIHRleHQtYW5jaG9yPSJzdGFydCIgIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMwRjZFNTYiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPlsgMCAgICAgIDEgIF08L3RleHQ+CiAgPHRleHQgeD0iMTE3IiB5PSIyNTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiMwODUwNDEiPnByZWRpY3RzIG5leHQgc3RhdGU8L3RleHQ+CgogIDwhLS0g4pWQ4pWQ4pWQIEtGIENPUkUgKGNlbnRlcikg4pWQ4pWQ4pWQIC0tPgogIDxyZWN0IHg9IjI2MiIgeT0iMTQ4IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIxMCIgcng9IjEwIiBmaWxsPSIjRjFFRkU4IiBzdHJva2U9IiNCNEIyQTkiIHN0cm9rZS13aWR0aD0iMS4yIi8+CiAgPHRleHQgeD0iMzUwIiB5PSIxNzUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSI2MDAiIGZpbGw9IiMyQzJDMkEiPktGIHVwZGF0ZTwvdGV4dD4KICA8bGluZSB4MT0iMjc1IiB5MT0iMTg2IiB4Mj0iNDI1IiB5Mj0iMTg2IiBzdHJva2U9IiNEM0QxQzciIHN0cm9rZS13aWR0aD0iMC44Ii8+CiAgPHRleHQgeD0iMzUwIiB5PSIyMDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM1RjVFNUEiPuKRoCBwcmVkaWN0IHjMgjwvdGV4dD4KICA8dGV4dCB4PSIzNTAiIHk9IjIyMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzVGNUU1QSI+4pGhIHByZWRpY3QgUDwvdGV4dD4KICA8bGluZSB4MT0iMjc1IiB5MT0iMjM0IiB4Mj0iNDI1IiB5Mj0iMjM0IiBzdHJva2U9IiNEM0QxQzciIHN0cm9rZS13aWR0aD0iMC44Ii8+CiAgPHRleHQgeD0iMzUwIiB5PSIyNTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM1RjVFNUEiPuKRoiBLYWxtYW4gZ2FpbiBLPC90ZXh0PgogIDx0ZXh0IHg9IjM1MCIgeT0iMjcyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNUY1RTVBIj7ikaMgdXBkYXRlIHjMgjwvdGV4dD4KICA8dGV4dCB4PSIzNTAiIHk9IjI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzVGNUU1QSI+4pGkIHVwZGF0ZSBQPC90ZXh0PgogIDxsaW5lIHgxPSIyNzUiIHkxPSIzMDQiIHgyPSI0MjUiIHkyPSIzMDQiIHN0cm9rZT0iI0QzRDFDNyIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KICA8dGV4dCB4PSIzNTAiIHk9IjMyMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg4ODc4MCI+UCA9IChJIOKIkiBLSClQPC90ZXh0PgogIDx0ZXh0IHg9IjM1MCIgeT0iMzQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmaWxsPSIjODg4NzgwIj5zaW1wbGlmaWVkIGZvcm08L3RleHQ+CgogIDwhLS0g4pWQ4pWQ4pWQIFEgTUFUUklYIChsZWZ0LWJvdHRvbSkg4pWQ4pWQ4pWQIC0tPgogIDxyZWN0IHg9IjMwIiB5PSIzMTgiIHdpZHRoPSIxNzUiIGhlaWdodD0iMTE1IiByeD0iOCIgZmlsbD0iI0UxRjVFRSIgc3Ryb2tlPSIjNURDQUE1IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSIxMTciIHk9IjM0MSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzA4NTA0MSI+USDigJQgcHJvY2VzcyBub2lzZTwvdGV4dD4KICA8dGV4dCB4PSI3MiIgIHk9IjM2NSIgdGV4dC1hbmNob3I9InN0YXJ0IiAgZm9udC1zaXplPSIxMyIgZmlsbD0iIzBGNkU1NiIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSI+WyAwLjAwMyAgICAwICAgXTwvdGV4dD4KICA8dGV4dCB4PSI3MiIgIHk9IjM4NSIgdGV4dC1hbmNob3I9InN0YXJ0IiAgZm9udC1zaXplPSIxMyIgZmlsbD0iIzBGNkU1NiIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSI+WyAwICAgICAwLjAwMyAgXTwvdGV4dD4KICA8dGV4dCB4PSIxMTciIHk9IjQxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzA4NTA0MSI+c2V0UWFuZ2xlIMK3IHNldFFiaWFzPC90ZXh0PgoKICA8IS0tIOKVkOKVkOKVkCBIIE1BVFJJWCAocmlnaHQtdG9wKSDilZDilZDilZAgLS0+CiAgPHJlY3QgeD0iNDk1IiB5PSIxNDgiIHdpZHRoPSIxNzUiIGhlaWdodD0iMTAwIiByeD0iOCIgZmlsbD0iI0ZBRUVEQSIgc3Ryb2tlPSIjRkFDNzc1IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSI1ODIiIHk9IjE3MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzYzMzgwNiI+SCDigJQgb2JzZXJ2YXRpb248L3RleHQ+CiAgPHRleHQgeD0iNTQwIiB5PSIyMDAiIHRleHQtYW5jaG9yPSJzdGFydCIgIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiM4NTRGMEIiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPlsgMSAgICAwIF08L3RleHQ+CiAgPHRleHQgeD0iNTgyIiB5PSIyMjQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiM2MzM4MDYiPmNo4buNbiBhbmdsZSB04burIHg8L3RleHQ+CiAgPHRleHQgeD0iNTgyIiB5PSIyNDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiM2MzM4MDYiPmtow7RuZyDEkW8gYmlhczwvdGV4dD4KCiAgPCEtLSDilZDilZDilZAgUiBTQ0FMQVIgKHJpZ2h0LWJvdHRvbSkg4pWQ4pWQ4pWQIC0tPgogIDxyZWN0IHg9IjQ5NSIgeT0iMjk1IiB3aWR0aD0iMTc1IiBoZWlnaHQ9IjkwIiByeD0iOCIgZmlsbD0iI0ZBRUVEQSIgc3Ryb2tlPSIjRkFDNzc1IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSI1ODIiIHk9IjMyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzYzMzgwNiI+UiDigJQgbWVhcy4gbm9pc2U8L3RleHQ+CiAgPHRleHQgeD0iNTgyIiB5PSIzNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiM4NTRGMEIiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPnIgPSAwLjEzPC90ZXh0PgogIDx0ZXh0IHg9IjU4MiIgeT0iMzY4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmaWxsPSIjNjMzODA2Ij5zZXRSbWVhc3VyZSgwLjEzKTwvdGV4dD4KCiAgPCEtLSDilZDilZDilZAgT1VUUFVUIChib3R0b20tY2VudGVyKSDilZDilZDilZAgLS0+CiAgPHJlY3QgeD0iMjYyIiB5PSI0MDgiIHdpZHRoPSIxNzYiIGhlaWdodD0iNjUiIHJ4PSI4IiBmaWxsPSIjRjFFRkU4IiBzdHJva2U9IiNCNEIyQTkiIHN0cm9rZS13aWR0aD0iMSIvPgogIDx0ZXh0IHg9IjM1MCIgeT0iNDMyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEzIiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjMkMyQzJBIj5PdXRwdXQ8L3RleHQ+CiAgPHRleHQgeD0iMzUwIiB5PSI0NTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM1RjVFNUEiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPs64zIIg4oaSIFBJRCBjb250cm9sbGVyPC90ZXh0PgoKICA8IS0tIOKVkOKVkOKVkCBBUlJPV1Mg4pWQ4pWQ4pWQIC0tPgoKICA8IS0tIFN0YXRlIHZlY3RvciDihpIgRiAoZG93bikgLS0+CiAgPGxpbmUgeDE9IjExNyIgeTE9IjEwOCIgeDI9IjExNyIgeTI9IjE1MyIgc3Ryb2tlPSIjODg4NzgwIiBzdHJva2Utd2lkdGg9IjEuMiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdykiLz4KCiAgPCEtLSB6X24gbWVhc3VyZW1lbnQg4oaSIEtGIGNvcmUgKGRvd24pIC0tPgogIDxsaW5lIHgxPSIzNTAiIHkxPSI5MyIgeDI9IjM1MCIgeTI9IjE0NiIgc3Ryb2tlPSIjODg4NzgwIiBzdHJva2Utd2lkdGg9IjEuMiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdykiLz4KICA8dGV4dCB4PSIzNTciIHk9IjEyNiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg4ODc4MCIgZm9udC1zdHlsZT0iaXRhbGljIj56JiN4MjA5OTs8L3RleHQ+CgogIDwhLS0gRiDihpIgS0YgY29yZSAocmlnaHQsIHdpdGggbGFiZWwpIC0tPgogIDxsaW5lIHgxPSIyMDUiIHkxPSIyMTMiIHgyPSIyNjAiIHkyPSIyMTMiIHN0cm9rZT0iIzBGNkU1NiIgc3Ryb2tlLXdpZHRoPSIxLjIiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctdGVhbCkiLz4KICA8dGV4dCB4PSIyMjQiIHk9IjIwNyIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzBGNkU1NiIgZm9udC13ZWlnaHQ9IjYwMCIgZm9udC1zdHlsZT0iaXRhbGljIj5GPC90ZXh0PgoKICA8IS0tIFEg4oaSIEtGIGNvcmUgKHJpZ2h0LWRpYWdvbmFsKSAtLT4KICA8bGluZSB4MT0iMjA1IiB5MT0iMzc1IiB4Mj0iMjYxIiB5Mj0iMzAwIiBzdHJva2U9IiMwRjZFNTYiIHN0cm9rZS13aWR0aD0iMS4yIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+CiAgPHRleHQgeD0iMjE4IiB5PSIzNDYiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiMwRjZFNTYiIGZvbnQtd2VpZ2h0PSI2MDAiIGZvbnQtc3R5bGU9Iml0YWxpYyI+UTwvdGV4dD4KCiAgPCEtLSBIIOKGkiBLRiBjb3JlIChsZWZ0KSAtLT4KICA8bGluZSB4MT0iNDk0IiB5MT0iMjEwIiB4Mj0iNDQwIiB5Mj0iMjEwIiBzdHJva2U9IiM4NTRGMEIiIHN0cm9rZS13aWR0aD0iMS4yIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWFtYmVyKSIvPgogIDx0ZXh0IHg9IjQ1OCIgeT0iMjA0IiBmb250LXNpemU9IjExIiBmaWxsPSIjODU0RjBCIiBmb250LXdlaWdodD0iNjAwIiBmb250LXN0eWxlPSJpdGFsaWMiPkg8L3RleHQ+CgogIDwhLS0gUiDihpIgS0YgY29yZSAobGVmdC1kaWFnb25hbCkgLS0+CiAgPGxpbmUgeDE9IjQ5NCIgeTE9IjMzMCIgeDI9IjQ0MCIgeTI9IjI5NSIgc3Ryb2tlPSIjODU0RjBCIiBzdHJva2Utd2lkdGg9IjEuMiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy1hbWJlcikiLz4KICA8dGV4dCB4PSI0NTgiIHk9IjMyNSIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg1NEYwQiIgZm9udC13ZWlnaHQ9IjYwMCIgZm9udC1zdHlsZT0iaXRhbGljIj5SPC90ZXh0PgoKICA8IS0tIEtGIGNvcmUg4oaSIE91dHB1dCAoZG93bikgLS0+CiAgPGxpbmUgeDE9IjM1MCIgeTE9IjM1OCIgeDI9IjM1MCIgeTI9IjQwNiIgc3Ryb2tlPSIjODg4NzgwIiBzdHJva2Utd2lkdGg9IjEuMiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdykiLz4KCjwvc3ZnPgo=)
+
+Với state vector $\mathbf{x} = [\theta,\ \dot{\theta}_{bias}]^T$ của MPU6050 trên Project Windify:
+
+**F — State Transition Matrix:**
+
+$$\mathbf{F} = \begin{bmatrix} 1 & -\Delta t \\ 0 & 1 \end{bmatrix}$$
+
+- `F[0][0] = 1` — angle kỳ trước vẫn là angle kỳ này (trước khi cộng gyro)
+- `F[0][1] = -dt` — gyro bias được **trừ ra** khỏi angle update (bias làm angle sai, nên bù ngược lại)
+- `F[1][0] = 0` — bias không phụ thuộc vào angle
+- `F[1][1] = 1` — bias tự duy trì (thay đổi rất chậm → model là "bias không đổi")
+
+> **Tại sao -dt?** State extrapolation cho angle là: $\theta_{n+1} = \theta_n + (\omega_{gyro} - bias) \cdot dt$  
+> Viết dưới dạng matrix: $\mathbf{x}_{n+1} = \mathbf{F}\mathbf{x}_n + \mathbf{B}u_n$ với $u_n = \omega_{gyro}$ và $\mathbf{B} = [dt,\ 0]^T$.  
+> Phần F chỉ handle bias contribution → `F[0][1] = -dt`.
+
+**H — Observation Matrix:**
+
+$$\mathbf{H} = \begin{bmatrix} 1 & 0 \end{bmatrix}$$
+
+- Ta **chỉ đo angle** từ accelerometer — không đo bias trực tiếp
+- H "chọn ra" phần tử đầu tiên của state vector: $z_n = H \cdot \mathbf{x} = \theta$
+- `H[0][1] = 0` — bias không quan sát được từ accelerometer
+
+**Q — Process Noise Matrix:**
+
+$$\mathbf{Q} = \begin{bmatrix} Q_{angle} & 0 \\ 0 & Q_{bias} \end{bmatrix} = \begin{bmatrix} 0.003 & 0 \\ 0 & 0.003 \end{bmatrix}$$
+
+- Map thẳng vào `setQangle(0.003)` và `setQbias(0.003)` trong code
+- Off-diagonal = 0 → angle noise và bias noise được coi là **độc lập** với nhau
+- Q nhỏ → model được tin tưởng nhiều → filter phản ứng chậm với thay đổi đột ngột
+
+**R — Measurement Noise (scalar với 1 sensor):**
+
+$$R = r = 0.13$$
+
+Map thẳng vào `setRmeasure(0.13)` — variance của accelerometer angle (bị ảnh hưởng bởi vibration motor 8520).
+
+---
+
+### 🐛 ✅ Joseph Form vs Simplified Form
+
+Phương trình Covariance Update có **hai dạng**:
+
+**Simplified form** (dùng trong code custom ở Section 12):
+$$\mathbf{P}_{n,n} = (\mathbf{I} - \mathbf{K}_n\mathbf{H})\mathbf{P}_{n,n-1}$$
+
+**Joseph form** (dùng trong phương trình tổng quát ở trên):
+$$\mathbf{P}_{n,n} = (\mathbf{I} - \mathbf{K}_n\mathbf{H})\mathbf{P}_{n,n-1}(\mathbf{I} - \mathbf{K}_n\mathbf{H})^T + \mathbf{K}_n\mathbf{R}\mathbf{K}_n^T$$
+
+**Khi nào dùng cái nào:**
+- **Simplified**: đủ dùng khi K được tính chính xác từ P và R, và P vẫn symmetric. Đơn giản hơn, tốn ít FLOP hơn → phù hợp cho embedded (ESP32).
+- **Joseph form**: numerically stable hơn khi P có thể bị mất symmetry do floating-point error tích lũy qua nhiều iterations. Bắt buộc dùng trong Extended KF / Unscented KF.
+
+> Với KF tuyến tính + `float` trên ESP32-S3 chạy 250Hz, simplified form là **đủ tốt**. Nếu nâng lên EKF sau này thì cần Joseph form.
+
+---
+
+## 11. Limitations & Assumptions ❓ ✅
+
+> **Tại sao section này quan trọng:** Giáo sư rất hay hỏi "KF có giới hạn gì?" hoặc "Tại sao không dùng EKF?". Đây là câu trả lời chuẩn bị sẵn.
+
+### Hai giả định cốt lõi của KF
+
+**Giả định 1: Noise phải Gaussian (zero-mean, white noise)**
+
+KF được derive để minimize mean squared error **với giả định** rằng process noise và measurement noise đều có phân phối Gaussian với mean = 0.
+
+- Nếu noise có bias (mean ≠ 0) → estimate bị lệch hệ thống
+- Nếu noise không phải white (có correlation theo thời gian) → Kalman Gain không còn tối ưu
+
+**Giả định 2: System phải linear**
+
+KF dùng matrix F để predict state. F là **hằng số** — nghĩa là relationship giữa current state và next state phải tuyến tính.
+
+- Với góc nhỏ (hover, <15°): $\sin\theta \approx \theta$ → linear approximation đủ tốt
+- Với góc lớn (>30°, aggressive maneuver): nonlinear → KF bắt đầu sai
+
+### Drone vi phạm giả định khi nào?
+
+| Tình huống | Giả định bị vi phạm | Hậu quả |
+|---|---|---|
+| Motor spin-up / spin-down | Noise không Gaussian (vibration spike) | Angle output bị giật trong ~0.5s |
+| Góc nghiêng > 30° | System nonlinear (sin/cos) | Estimate bị lệch, PID mất ổn định |
+| Nhiệt độ thay đổi nhiều | Bias drift nhanh hơn Q_bias model | Gyro bias không được track kịp |
+| Va chạm / shock | Impulse noise — không phải Gaussian | Output spike, cần low-pass thêm |
+
+### Tại sao vẫn dùng KF thường (không dùng EKF)?
+
+Trong phạm vi hoạt động bình thường của **indoor drone hover** (góc <15°, tốc độ thấp):
+
+1. **Linear approximation đủ tốt** — sai số do nonlinearity < sai số do sensor noise
+2. **KF đơn giản hơn nhiều** — EKF cần tính Jacobian matrix mỗi step → tốn CPU
+3. **ESP32-S3 ở 250Hz** — mỗi loop chỉ có ~4ms. KF tuyến tính fit; EKF cần benchmark thêm
+4. **Thư viện đã proven** — Kalman library đang dùng đã được test trên nhiều drone project
+
+> **Nếu mở rộng sau này:** EKF (Extended KF) linearize system tại mỗi operating point bằng Jacobian. Unscented KF (UKF) dùng sigma points thay vì Jacobian — accurate hơn nhưng đắt hơn. Cả hai đều phù hợp hơn khi drone bay aggressive maneuver.
+
+---
+
+## 12. Drone Integration — Project Windify
 
 ### Mapping lý thuyết → code hiện tại
 
@@ -485,6 +632,32 @@ kalmanP.setQbias(0.003);
 - `Qangle = 0.003` → Q nhỏ → model dynamics khá chắc (gyro tốt trong ngắn hạn)
 - `Qbias = 0.003` → bias thay đổi chậm → model bias change nhỏ
 
+---
+
+### ⚙️ ✅ Tuning Decision Tree — Khi nào tăng Q, khi nào tăng R?
+
+> **Đây là câu hỏi thực tế nhất khi defend.** "Làm sao bạn biết chọn 0.13 và 0.003?"
+
+**Bảng triệu chứng → chẩn đoán → hành động:**
+
+| Triệu chứng quan sát được | Chẩn đoán | Hành động |
+|---|---|---|
+| Angle output dao động mạnh theo vibration motor | R quá nhỏ — đang tin accelerometer quá nhiều | Tăng `Rmeasure` (vd: 0.13 → 0.3) |
+| Angle phản ứng chậm, trễ khi drone thật sự nghiêng | R quá lớn hoặc Q quá nhỏ | Giảm `Rmeasure` hoặc tăng `Qangle` |
+| Angle drift dần về một phía theo thời gian dù đứng yên | `Qbias` quá nhỏ — bias không được track kịp | Tăng `Qbias` (vd: 0.003 → 0.01) |
+| Output mượt nhưng không phản ứng với thay đổi nhanh | Q tổng thể quá nhỏ | Tăng cả `Qangle` và `Qbias` |
+| Output nhảy loạn khi arm motor (spin-up) | Impulse noise vượt Gaussian assumption | Giữ R cao trong giai đoạn arm |
+
+**Quy trình tuning 3 bước:**
+
+1. **Bắt đầu từ:** `Rmeasure = 0.1`, `Qangle = 0.001`, `Qbias = 0.003`
+2. **Điều chỉnh R trước** — giữ Q cố định, tăng/giảm R đến khi output không bị ảnh hưởng bởi motor vibration nhưng vẫn phản ứng với tilt thật
+3. **Điều chỉnh Q sau** — nếu drift còn, tăng `Qbias`; nếu lag còn, tăng `Qangle`
+
+> **Rule of thumb cho motor 8520:** R/Q ratio ≈ 40-50 là vùng hoạt động tốt. Ví dụ: R=0.13, Q=0.003 → ratio ≈ 43.
+
+---
+
 ### Code snippet — KF usage trong loop
 
 ```cpp
@@ -499,7 +672,7 @@ float rawR = (myIMU.getRawPitchAngle()) - rollOffset;    // z_n cho roll
 //   - Predict: x̂_{n,n-1} = x̂_{n-1} + gyroRate * dt
 //   - Compute Kalman Gain: K = P / (P + R)
 //   - Update: x̂_{n,n} = x̂_{n,n-1} + K * (z_n - x̂_{n,n-1})
-//   - Update covariance: P = (1 - K) * P
+//   - Update covariance: P = (1 - K) * P  [simplified form — đủ dùng cho linear KF]
 float fP_raw = kalmanP.getAngle(rawP, -myIMU.getGyroX(), dt);
 float fR_raw = kalmanR.getAngle(rawR,  myIMU.getGyroY(), dt);
 
@@ -539,11 +712,12 @@ float kalman_update(KalmanState &ks,
 
     // === PREDICT ===
     // State extrapolation: angle += (gyro - bias) * dt
+    // Tương ứng F = [[1, -dt], [0, 1]] nhân với state vector
     float rate = gyro_rate - ks.bias;
     ks.angle += rate * dt;
 
-    // Covariance extrapolation: P += Q * dt
-    // Q_angle = 0.003, Q_bias = 0.003
+    // Covariance extrapolation: P = F*P*F^T + Q
+    // Expanded với F = [[1,-dt],[0,1]], Q_angle = 0.003, Q_bias = 0.003
     ks.P[0][0] += dt * (dt * ks.P[1][1] - ks.P[0][1] - ks.P[1][0] + 0.003f);
     ks.P[0][1] -= dt * ks.P[1][1];
     ks.P[1][0] -= dt * ks.P[1][1];
@@ -563,6 +737,8 @@ float kalman_update(KalmanState &ks,
     ks.bias  += K[1] * innovation;
 
     // Covariance update: P = (I - K*H) * P
+    // Dùng simplified form — đủ stable cho linear KF trên ESP32
+    // Nếu nâng lên EKF: cần Joseph form để giữ P symmetric
     float P00_old = ks.P[0][0];
     float P01_old = ks.P[0][1];
     ks.P[0][0] -= K[0] * P00_old;
@@ -585,9 +761,9 @@ flowchart TD
     end
 
     subgraph KF["Kalman Filter (library hoặc custom)"]
-        PREDICT_KF["PREDICT<br/>angle += (gyro - bias) * dt<br/>P += Q * dt"]
-        GAIN_KF["KALMAN GAIN<br/>K = P / (P + R)"]
-        UPDATE_KF["UPDATE<br/>angle += K * (accel_angle - angle)<br/>P = (1-K) * P"]
+        PREDICT_KF["PREDICT<br/>angle += (gyro - bias) * dt<br/>P = F*P*F^T + Q"]
+        GAIN_KF["KALMAN GAIN<br/>K = P*H^T / (H*P*H^T + R)"]
+        UPDATE_KF["UPDATE<br/>angle += K * (accel_angle - angle)<br/>P = (I-KH)*P"]
     end
 
     subgraph PID["PID Controller"]
@@ -619,6 +795,16 @@ flowchart TD
 | `getAngle(raw, gyro, dt)` | Full KF update step | Predict + Gain + Update trong 1 call |
 | `calibrate()` | Initialization ($\hat{x}_{0,0}$) | Lấy initial state estimate |
 | `dt = 0.004` | $\Delta t$ | Timestep — loop chạy 250Hz |
+
+---
+
+## Changelog
+
+| Version | Thay đổi |
+|---|---|
+| v1 | Initial draft |
+| v2 | Thêm Drone Context boxes cho mỗi example |
+| v3 | 📐 Numerical trace KF 1D with Q (Section 9) · 🕳️ Matrix F/H/Q cụ thể cho drone (Section 10) · 🐛 Joseph form note trong code và Section 10 · ❓ Limitations & Assumptions section mới (Section 11) · ⚙️ Tuning decision tree (Section 12) · ⚙️ Updated PREDICT comment trong custom code |
 
 ---
 
