@@ -105,9 +105,9 @@ flowchart TD
 | α filter | Position | 1/n | Có | Không |
 | α-β filter | Pos + Vel | Cố định α,β | Có | Không |
 | α-β-γ filter | Pos + Vel + Accel | Cố định α,β,γ | Không | Không |
-| KF 1D (no Q) | Scalar bất kỳ | **Tính động K_n** | Tuỳ model | Có (p) |
-| KF 1D (with Q) | Scalar bất kỳ | **Tính động K_n** | Tuỳ model | Có (p, Q) |
-| **Multivariate KF** | **Vector bất kỳ** | **Tính động K_n** | Không | **Có (P, Q, R matrices)** |
+| KF 1D (no Q) | Scalar bất kỳ | **Tính động $K_n$** | Tuỳ model | Có (p) |
+| KF 1D (with Q) | Scalar bất kỳ | **Tính động $K_n$** | Tuỳ model | Có (p, Q) |
+| **Multivariate KF** | **Vector bất kỳ** | **Tính động $K_n$** | Không | **Có (P, Q, R matrices)** |
 
 ---
 
@@ -146,7 +146,7 @@ Trong đó:
 
 ### Kết quả số (True value = 1000g)
 
-| n | α_n | z_n (g) | x̂_{n,n} (g) |
+| n | $\alpha_n$ | $z_n$ (g) | $\hat{x}_{n,n}$ (g) |
 |---|---|---|---|
 | 1 | 1 | 996 | 996.00 |
 | 2 | 1/2 | 994 | 995.00 |
@@ -199,7 +199,7 @@ Trong đó:
 - $\alpha$ — gain cho **position** (hằng số, không giảm như 1/n)
 - $\beta$ — gain cho **velocity**
 - $(z_n - \hat{x}_{n,n-1})$ — innovation (sai lệch giữa đo được và dự đoán)
-- Innovation / Δt → ước lượng thay đổi vận tốc
+- Innovation / $\Delta t$ → ước lượng thay đổi vận tốc
 
 ### Chọn α và β
 
@@ -213,7 +213,7 @@ Trong đó:
 ![Alpha-Beta Filter Algorithm](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDcwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZm9udC1mYW1pbHk9InVpLXNhbnMtc2VyaWYsIHN5c3RlbS11aSwgc2Fucy1zZXJpZiI+CiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJhcnJvdyIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI4IiByZWZZPSI1IiBtYXJrZXJXaWR0aD0iNiIgbWFya2VySGVpZ2h0PSI2IiBvcmllbnQ9ImF1dG8tc3RhcnQtcmV2ZXJzZSI+CiAgICAgIDxwYXRoIGQ9Ik0yIDFMOCA1TDIgOSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODg4NzgwIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICA8L21hcmtlcj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjcwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGQUZBRjkiIHJ4PSIxMiIvPgoKICA8IS0tIElOSVQgLS0+CiAgPHJlY3QgeD0iMjAiIHk9IjcwIiB3aWR0aD0iMTI1IiBoZWlnaHQ9IjYwIiByeD0iNiIgZmlsbD0iI0YxRUZFOCIgc3Ryb2tlPSIjQjRCMkE5IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSI4MiIgIHk9IjkxIiAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzJDMkMyQSI+U3RlcCAwOiBJTklUPC90ZXh0PgogIDx0ZXh0IHg9IjgyIiAgeT0iMTA3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSIjNUY1RTVBIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj54zILigoAs4oKAID0gMzAwMDBtPC90ZXh0PgogIDx0ZXh0IHg9IjgyIiAgeT0iMTIyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSIjNUY1RTVBIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj7huovMguKCgCzigoAgPSA0MG0vczwvdGV4dD4KCiAgPCEtLSBQUkVESUNUIC0tPgogIDxyZWN0IHg9IjE3MCIgeT0iNTUiIHdpZHRoPSIxNjAiIGhlaWdodD0iODUiIHJ4PSI2IiBmaWxsPSIjRTFGNUVFIiBzdHJva2U9IiM1RENBQTUiIHN0cm9rZS13aWR0aD0iMSIvPgogIDx0ZXh0IHg9IjI1MCIgeT0iNzYiICB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjMDg1MDQxIj5TdGVwIDM6IFBSRURJQ1Q8L3RleHQ+CiAgPHRleHQgeD0iMjUwIiB5PSI5MyIgIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMwRjZFNTYiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPnjMguKCmeKCiuKCgSzigpkgPSB4zILigpks4oKZICsgzpR0wrfhuovMguKCmSzigpk8L3RleHQ+CiAgPHRleHQgeD0iMjUwIiB5PSIxMDgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMwRjZFNTYiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPuG6i8yC4oKZ4oKK4oKBLOKCmSA9IOG6i8yC4oKZLOKCmTwvdGV4dD4KCiAgPCEtLSBVbml0IERlbGF5IC0tPgogIDxyZWN0IHg9IjM0MCIgeT0iMTgiIHdpZHRoPSIxMDAiIGhlaWdodD0iMzYiIHJ4PSI2IiBmaWxsPSIjRjFFRkU4IiBzdHJva2U9IiNCNEIyQTkiIHN0cm9rZS13aWR0aD0iMSIvPgogIDx0ZXh0IHg9IjM5MCIgeT0iMzQiICB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjMkMyQzJBIj5Vbml0IERlbGF5PC90ZXh0PgogIDx0ZXh0IHg9IjM5MCIgeT0iNDgiICB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSIjNUY1RTVBIj5uIOKGkiBu4oiSMTwvdGV4dD4KCiAgPCEtLSBNRUFTVVJFIC0tPgogIDxyZWN0IHg9IjM0MCIgeT0iMTIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjM4IiByeD0iNiIgZmlsbD0iI0ZBRUNFNyIgc3Ryb2tlPSIjRjA5OTdCIiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSIzOTAiIHk9IjEzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzcxMkIxMyI+U3RlcCAxOiBNRUFTVVJFPC90ZXh0PgogIDx0ZXh0IHg9IjM5MCIgeT0iMTUxIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSIjOTkzQzFEIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj564oKZIChyYW5nZSk8L3RleHQ+CgogIDwhLS0gVVBEQVRFIC0tPgogIDxyZWN0IHg9IjQ2MCIgeT0iNTUiIHdpZHRoPSIxNzUiIGhlaWdodD0iODUiIHJ4PSI2IiBmaWxsPSIjRUVFREZFIiBzdHJva2U9IiNBRkE5RUMiIHN0cm9rZS13aWR0aD0iMSIvPgogIDx0ZXh0IHg9IjU0NyIgeT0iNzYiICB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjM0MzNDg5Ij5TdGVwIDI6IFVQREFURTwvdGV4dD4KICA8dGV4dCB4PSI1NDciIHk9IjkzIiAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzUzNEFCNyIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSI+eMyCICs9IM6xwrdpbm5vdmF0aW9uPC90ZXh0PgogIDx0ZXh0IHg9IjU0NyIgeT0iMTA4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEwIiBmaWxsPSIjNTM0QUI3IiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj7huovMgiArPSDOssK3aW5ub3YvzpR0PC90ZXh0PgoKICA8IS0tIE91dHB1dCAtLT4KICA8cmVjdCB4PSI0NjAiIHk9IjE1MiIgd2lkdGg9IjE3NSIgaGVpZ2h0PSIzMiIgcng9IjYiIGZpbGw9IiNGMUVGRTgiIHN0cm9rZT0iI0I0QjJBOSIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPHRleHQgeD0iNTQ3IiB5PSIxNzIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMyQzJDMkEiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPk91dHB1dDogeMyC4oKZLOKCmSAg4bqLzILigpks4oKZPC90ZXh0PgoKICA8IS0tIEFycm93cyAtLT4KICA8bGluZSB4MT0iMTQ1IiB5MT0iMTAwIiB4Mj0iMTY4IiB5Mj0iMTAwIiBzdHJva2U9IiM4ODg3ODAiIHN0cm9rZS13aWR0aD0iMS4yIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93KSIvPgogIDxwYXRoIGQ9Ik0yNTAgNTUgTDI1MCAzNiBMMzM4IDM2IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODg3ODAiIHN0cm9rZS13aWR0aD0iMS4yIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93KSIvPgogIDxwYXRoIGQ9Ik00NDAgMzYgTDQ1NSAzNiBMNDU1IDk3IEw0NTggOTciIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzg4ODc4MCIgc3Ryb2tlLXdpZHRoPSIxLjIiIG1hcmtlci1lbmQ9InVybCgjYXJyb3cpIi8+CiAgPGxpbmUgeDE9IjQ0MCIgeTE9IjEzOSIgeDI9IjQ1OCIgeTI9IjEyMCIgc3Ryb2tlPSIjODg4NzgwIiBzdHJva2Utd2lkdGg9IjEuMiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdykiLz4KICA8bGluZSB4MT0iNTQ3IiB5MT0iMTQwIiB4Mj0iNTQ3IiB5Mj0iMTUwIiBzdHJva2U9IiM4ODg3ODAiIHN0cm9rZS13aWR0aD0iMS4yIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93KSIvPgogIDxwYXRoIGQ9Ik00NjAgMTE1IEwxNjAgMTE1IEwxNjAgODggTDE2OCA4OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODg4NzgwIiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1kYXNoYXJyYXk9IjQgMyIgbWFya2VyLWVuZD0idXJsKCNhcnJvdykiLz4KPC9zdmc+Cg==)
 
 > ### 🚁 Drone Context — Example 2
-> **Analogy với Complementary Filter hiện tại:** α-β filter là "tiền thân" của Complementary Filter đang chạy trong drone. `getAngle()` từ thư viện Kalman library thực chất làm việc tương tự — kết hợp accelerometer angle (= z_n) và gyro rate (= ẋ) với hệ số cố định. Hạn chế: hệ số cố định không tối ưu khi noise thay đổi (ví dụ motor spin up).
+> **Analogy với Complementary Filter hiện tại:** α-β filter là "tiền thân" của Complementary Filter đang chạy trong drone. `getAngle()` từ thư viện Kalman library thực chất làm việc tương tự — kết hợp accelerometer angle (= $z_n$) và gyro rate (= $\dot{x}$) với hệ số cố định. Hạn chế: hệ số cố định không tối ưu khi noise thay đổi (ví dụ motor spin up).
 
 ---
 
@@ -282,7 +282,7 @@ Trong đó $\gamma$ là gain cho acceleration — tương tự α cho position, 
 
 | α-β-γ filter | Kalman Filter |
 |---|---|
-| Người lập trình **chọn** α, β, γ | Filter **tự tính** Kalman Gain K_n |
+| Người lập trình **chọn** α, β, γ | Filter **tự tính** Kalman Gain $K_n$ |
 | Gain cố định suốt quá trình | Gain thay đổi mỗi iteration |
 | Không biết mình "chắc" bao nhiêu | Track uncertainty (variance p) |
 
@@ -369,7 +369,7 @@ Trong đó $Q$ (process noise variance) thể hiện mức độ "tin tưởng v
 > **Bối cảnh:** Đo nhiệt độ cảm biến trên drone đang hover. True value ≈ 25°C.  
 > Params: `r = 4.0` (sensor noise variance), `Q = 0.5` (process noise), `p₀ = 10.0`, `x̂₀ = 20.0°C`
 
-| n | z_n (°C) | p_{n,n-1} | K_n | x̂_{n,n} (°C) | p_{n,n} |
+| n | $z_n$ (°C) | $p_{n,n-1}$ | $K_n$ | $\hat{x}_{n,n}$ (°C) | $p_{n,n}$ |
 |---|---|---|---|---|---|
 | 0 | — | — | — | 20.00 | 10.00 |
 | 1 | 24.5 | 10.50 | 0.724 | 23.26 | 2.90 |
@@ -387,7 +387,7 @@ Trong đó $Q$ (process noise variance) thể hiện mức độ "tin tưởng v
 > $p_{n,n} = (1 - K_n) \cdot p_{n,n-1}$
 
 **Insights từ bảng:**
-- **K_n không về 0** — nhờ Q=0.5 bơm lại uncertainty mỗi bước, filter luôn lắng nghe measurement (so sánh: nếu Q=0 thì K_n → 0 sau ~10 iterations)
+- **$K_n$ không về 0** — nhờ Q=0.5 bơm lại uncertainty mỗi bước, filter luôn lắng nghe measurement (so sánh: nếu Q=0 thì K_n → 0 sau ~10 iterations)
 - **p ổn định ở ~1.19** thay vì tiếp tục giảm — đây là "steady-state" khi Q và r cân bằng nhau
 - **x̂ hội tụ về ~25°C** dù initial guess = 20°C — KF tự kéo estimate về đúng hướng chỉ qua measurement
 
@@ -422,12 +422,12 @@ $$\mathbf{P}_{n,n} = (\mathbf{I} - \mathbf{K}_n\mathbf{H})\mathbf{P}_{n,n-1}(\ma
 | Ký hiệu | Là gì | Analogy 1D |
 |---|---|---|
 | **x** (vector) | Tất cả biến state cùng lúc (roll, pitch, bias) | Scalar x |
-| **F** (matrix) | "Công thức dự đoán" cho toàn bộ state | Hệ số Δt |
+| **F** (matrix) | "Công thức dự đoán" cho toàn bộ state | Hệ số $\Delta t$ |
 | **H** (matrix) | "Bộ chuyển đổi" từ state sang measurement | = 1 nếu đo trực tiếp |
 | **Q** (matrix) | Uncertainty của model (mỗi biến state) | Scalar Q |
 | **R** (matrix) | Uncertainty của sensor (mỗi measurement) | Scalar r |
 | **P** (matrix) | Uncertainty hiện tại của estimate | Scalar p |
-| **K** (matrix) | Kalman Gain (tính động) | Scalar K_n |
+| **K** (matrix) | Kalman Gain (tính động) | Scalar $K_n$ |
 
 ---
 
