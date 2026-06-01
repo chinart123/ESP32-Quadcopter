@@ -1,0 +1,96 @@
+<svg width="820" height="320" viewBox="0 0 820 320" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#888780" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#4472C4" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#E26B0A" stroke-width="1.8" stroke-linecap="round"/></marker>
+  </defs>
+  <rect width="820" height="320" fill="white"/>
+  <rect x="0" y="0" width="820" height="30" fill="#EEF3FF"/>
+  <line x1="0" y1="30" x2="820" y2="30" stroke="#B0C0E8" stroke-width="0.8"/>
+  <text x="410" y="21" text-anchor="middle" font-size="13" font-weight="700" fill="#2C3E6B">Drone Integration — IMU → Kalman Filter → PID Controller — Section 12</text>
+
+  <!-- IMU block (purple) -->
+  <rect x="20" y="55" width="180" height="175" rx="10" fill="#F5F3FE" stroke="#AFA9EC" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="110" y="76" text-anchor="middle" font-size="11" font-weight="700" fill="#3C3489">HungVo_IMU.cpp</text>
+
+  <rect x="34" y="86" width="152" height="40" rx="6" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.8"/>
+  <text x="110" y="101" text-anchor="middle" font-size="10" font-weight="600" fill="#3C3489">readBurst()</text>
+  <text x="110" y="116" text-anchor="middle" font-size="9" fill="#534AB7">ax, ay, az, gx, gy, gz</text>
+
+  <rect x="34" y="134" width="152" height="40" rx="6" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.8"/>
+  <text x="110" y="149" text-anchor="middle" font-size="10" font-weight="600" fill="#3C3489">getRawRollAngle()</text>
+  <text x="110" y="164" text-anchor="middle" font-size="9" fill="#534AB7">getRawPitchAngle() → atan2</text>
+
+  <rect x="34" y="182" width="152" height="40" rx="6" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.8"/>
+  <text x="110" y="197" text-anchor="middle" font-size="10" font-weight="600" fill="#3C3489">getGyroX(), getGyroY()</text>
+  <text x="110" y="212" text-anchor="middle" font-size="9" fill="#534AB7">→ deg/s (gyro rate)</text>
+
+  <!-- KF block (green) -->
+  <rect x="240" y="55" width="180" height="175" rx="10" fill="#EDF9F3" stroke="#5DCAA5" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="330" y="76" text-anchor="middle" font-size="11" font-weight="700" fill="#085041">Kalman Filter</text>
+
+  <rect x="254" y="86" width="152" height="40" rx="6" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.8"/>
+  <text x="330" y="101" text-anchor="middle" font-size="10" font-weight="600" fill="#085041">PREDICT</text>
+  <text x="330" y="116" text-anchor="middle" font-size="9" fill="#0F6E56">angle += (gyro-bias)*dt</text>
+
+  <rect x="254" y="134" width="152" height="40" rx="6" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.8"/>
+  <text x="330" y="149" text-anchor="middle" font-size="10" font-weight="600" fill="#085041">KALMAN GAIN</text>
+  <text x="330" y="164" text-anchor="middle" font-size="9" fill="#0F6E56">K = PH*(HPH+R)^-1</text>
+
+  <rect x="254" y="182" width="152" height="40" rx="6" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.8"/>
+  <text x="330" y="197" text-anchor="middle" font-size="10" font-weight="600" fill="#085041">UPDATE</text>
+  <text x="330" y="212" text-anchor="middle" font-size="9" fill="#0F6E56">angle += K*(z-angle)</text>
+
+  <!-- PID block (amber) -->
+  <rect x="460" y="55" width="180" height="175" rx="10" fill="#FFFBF0" stroke="#FAC775" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="550" y="76" text-anchor="middle" font-size="11" font-weight="700" fill="#633806">PID Controller</text>
+
+  <rect x="474" y="86" width="152" height="40" rx="6" fill="#FAEEDA" stroke="#FAC775" stroke-width="0.8"/>
+  <text x="550" y="101" text-anchor="middle" font-size="10" font-weight="600" fill="#633806">Roll PID</text>
+  <text x="550" y="116" text-anchor="middle" font-size="9" fill="#854F0B">error = target - fRoll</text>
+
+  <rect x="474" y="134" width="152" height="40" rx="6" fill="#FAEEDA" stroke="#FAC775" stroke-width="0.8"/>
+  <text x="550" y="149" text-anchor="middle" font-size="10" font-weight="600" fill="#633806">Pitch PID</text>
+  <text x="550" y="164" text-anchor="middle" font-size="9" fill="#854F0B">error = target - fPitch</text>
+
+  <rect x="474" y="182" width="152" height="40" rx="6" fill="#FAEEDA" stroke="#FAC775" stroke-width="0.8"/>
+  <text x="550" y="197" text-anchor="middle" font-size="10" font-weight="600" fill="#633806">Yaw PID</text>
+  <text x="550" y="212" text-anchor="middle" font-size="9" fill="#854F0B">error = target - yaw_rate</text>
+
+  <!-- Motor Mixer block (red) -->
+  <rect x="670" y="100" width="130" height="60" rx="8" fill="#FAE8E7" stroke="#E24B4A" stroke-width="1.5"/>
+  <text x="735" y="124" text-anchor="middle" font-size="12" font-weight="600" fill="#712B13">Motor Mixer</text>
+  <text x="735" y="142" text-anchor="middle" font-size="10" fill="#993C1D" font-family="'Courier New', monospace">FL · FR · RL · RR</text>
+
+  <!-- ARROWS -->
+  <!-- IMU → KF: accel angle (z_n) -->
+  <line x1="200" y1="156" x2="238" y2="156" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#ag)"/>
+  <text x="219" y="149" text-anchor="middle" font-size="9" fill="#0F6E56" font-style="italic">z(n)</text>
+  <!-- IMU → KF: gyro rate (dashed) -->
+  <line x1="200" y1="196" x2="238" y2="202" stroke="#888780" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#a)"/>
+  <text x="218" y="196" text-anchor="middle" font-size="9" fill="#888" font-style="italic">gyro</text>
+
+  <!-- KF → PID: fRoll, fPitch -->
+  <line x1="420" y1="142" x2="458" y2="120" stroke="#4472C4" stroke-width="1.5" marker-end="url(#ab)"/>
+  <text x="444" y="130" font-size="9" fill="#4472C4" font-style="italic">fRoll</text>
+  <line x1="420" y1="196" x2="458" y2="152" stroke="#4472C4" stroke-width="1.5" marker-end="url(#ab)"/>
+  <text x="444" y="172" font-size="9" fill="#4472C4" font-style="italic">fPitch</text>
+
+  <!-- PID → Mixer -->
+  <line x1="626" y1="130" x2="668" y2="130" stroke="#E26B0A" stroke-width="1.5" marker-end="url(#ao)"/>
+
+  <!-- 45-degree rotate note -->
+  <rect x="20" y="255" width="400" height="30" rx="4" fill="#FFF9F0" stroke="#CCAA55" stroke-width="0.8"/>
+  <text x="220" y="268" text-anchor="middle" font-size="10" fill="#7A5C00">Note: Rotate 45° to align with X-frame motor layout:</text>
+  <text x="220" y="281" text-anchor="middle" font-size="10" fill="#7A5C00">fRoll = (rawR*0.7071) + (rawP*0.7071)</text>
+
+  <!-- Loop back -->
+  <path d="M735 162 L735 240 L110 240 L110 232" fill="none" stroke="#888780" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#a)"/>
+  <text x="420" y="252" text-anchor="middle" font-size="9" fill="#888" font-style="italic">dt = 4ms (250Hz loop)</text>
+
+  <!-- dt label -->
+  <rect x="454" y="258" width="356" height="30" rx="4" fill="#EEF3FF" stroke="#B0C0E8" stroke-width="0.8"/>
+  <text x="632" y="271" text-anchor="middle" font-size="10" fill="#2C3E6B">R=0.13 (accel noise) | Qangle=0.003 | Qbias=0.003</text>
+  <text x="632" y="283" text-anchor="middle" font-size="10" fill="#2C3E6B">R/Q ≈ 43 — empirically tuned for 8520 motors</text>
+</svg>

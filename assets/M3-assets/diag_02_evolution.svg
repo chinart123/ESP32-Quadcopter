@@ -1,0 +1,69 @@
+<svg width="700" height="590" viewBox="0 0 700 590" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="a"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#888780" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#C0504D" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#4472C4" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#E26B0A" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#4A9A4A" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="av" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#7B52AB" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="at" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round"/></marker>
+  </defs>
+  <rect width="700" height="590" fill="white"/>
+  <rect x="0" y="0" width="700" height="30" fill="#EEF3FF"/>
+  <line x1="0" y1="30" x2="700" y2="30" stroke="#B0C0E8" stroke-width="0.8"/>
+  <text x="350" y="21" text-anchor="middle" font-size="13" font-weight="700" fill="#2C3E6B">Evolution: α Filter → Multivariate Kalman Filter</text>
+
+  <!-- ① α filter -->
+  <rect x="200" y="42" width="300" height="74" rx="8" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="1.5"/>
+  <text x="350" y="67" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C2A">① α filter</text>
+  <text x="350" y="86" text-anchor="middle" font-size="11" fill="#5F5E5A">Static system — Gain = 1/n  (decreasing)</text>
+  <text x="350" y="103" text-anchor="middle" font-size="11" fill="#5F5E5A">No velocity tracking, no uncertainty</text>
+
+  <line x1="350" y1="116" x2="350" y2="140" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="240" y="128" width="220" height="16" rx="4" fill="#D3D1C7"/>
+  <text x="350" y="140" text-anchor="middle" font-size="10" fill="#2C2C2A">+ velocity tracking → α-β filter</text>
+
+  <!-- ② α-β filter -->
+  <rect x="200" y="148" width="300" height="74" rx="8" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="1.5"/>
+  <text x="350" y="173" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C2A">② α-β filter</text>
+  <text x="350" y="191" text-anchor="middle" font-size="11" fill="#5F5E5A">Constant velocity — Fixed gains α, β</text>
+  <text x="350" y="208" text-anchor="middle" font-size="11" fill="#5F5E5A">Has lag error under acceleration</text>
+
+  <line x1="350" y1="222" x2="350" y2="246" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="228" y="234" width="244" height="16" rx="4" fill="#D3D1C7"/>
+  <text x="350" y="246" text-anchor="middle" font-size="10" fill="#2C2C2A">+ acceleration tracking → α-β-γ filter</text>
+
+  <!-- ③ α-β-γ filter -->
+  <rect x="200" y="254" width="300" height="74" rx="8" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="1.5"/>
+  <text x="350" y="279" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C2A">③ α-β-γ filter</text>
+  <text x="350" y="297" text-anchor="middle" font-size="11" fill="#5F5E5A">Constant accel — Fixed gains α, β, γ</text>
+  <text x="350" y="314" text-anchor="middle" font-size="11" fill="#5F5E5A">No lag error, but gains still hardcoded</text>
+
+  <line x1="350" y1="328" x2="350" y2="352" stroke="#444441" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="168" y="338" width="364" height="18" rx="4" fill="#444441"/>
+  <text x="350" y="351" text-anchor="middle" font-size="10" font-weight="700" fill="#FAC775">⚡ BREAKTHROUGH — Gain tính động từ variance (p và r)</text>
+
+  <!-- ④ KF 1D no Q -->
+  <rect x="200" y="360" width="300" height="74" rx="8" fill="#EAF3DE" stroke="#639922" stroke-width="2"/>
+  <text x="350" y="385" text-anchor="middle" font-size="14" font-weight="700" fill="#27500A">④ KF 1D — no Q</text>
+  <text x="350" y="403" text-anchor="middle" font-size="11" fill="#3B6D11">K(n) = p(n,n-1) / (p(n,n-1) + r)</text>
+  <text x="350" y="420" text-anchor="middle" font-size="11" fill="#3B6D11">Track uncertainty p — optimal estimate</text>
+
+  <line x1="350" y1="434" x2="350" y2="458" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="244" y="446" width="212" height="16" rx="4" fill="#D3D1C7"/>
+  <text x="350" y="458" text-anchor="middle" font-size="10" fill="#2C2C2A">+ process noise Q → KF 1D with Q</text>
+
+  <!-- ⑤ KF 1D with Q -->
+  <rect x="200" y="466" width="300" height="74" rx="8" fill="#EAF3DE" stroke="#639922" stroke-width="2"/>
+  <text x="350" y="491" text-anchor="middle" font-size="14" font-weight="700" fill="#27500A">⑤ KF 1D — with Q</text>
+  <text x="350" y="509" text-anchor="middle" font-size="11" fill="#3B6D11">5 equations — p never → 0 (Q injects uncertainty)</text>
+  <text x="350" y="526" text-anchor="middle" font-size="11" fill="#3B6D11">Filter always listens to measurements</text>
+
+  <line x1="350" y1="540" x2="350" y2="558" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="246" y="548" width="208" height="14" rx="4" fill="#D3D1C7"/>
+  <text x="350" y="559" text-anchor="middle" font-size="10" fill="#2C2C2A">+ matrix notation (F, H, Q, R, P)</text>
+
+  <!-- ⑥ Multivariate KF -->
+  <rect x="200" y="565" width="300" height="20" rx="8" fill="#E6E6FB" stroke="#7F77DD" stroke-width="1.5"/>
+  <text x="350" y="579" text-anchor="middle" font-size="12" font-weight="700" fill="#26215C">⑥ Multivariate KF — F, H, Q, R, P, K</text>
+</svg>

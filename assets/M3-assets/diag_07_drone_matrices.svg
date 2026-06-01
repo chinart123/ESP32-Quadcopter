@@ -1,0 +1,67 @@
+<svg width="820" height="590" viewBox="0 0 820 560" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+  <rect width="820" height="560" fill="white"/>
+  <rect x="0" y="0" width="820" height="30" fill="#EEF3FF"/>
+  <line x1="0" y1="30" x2="820" y2="30" stroke="#B0C0E8" stroke-width="0.8"/>
+  <text x="410" y="21" text-anchor="middle" font-size="13" font-weight="700" fill="#2C3E6B">Drone Matrices — State: [angle, gyro_bias] — Project Windify</text>
+  <!-- F matrix -->
+  <rect x="30" y="50" width="370" height="190" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="1.5"/>
+  <text x="215" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#085041">F — State Transition Matrix</text>
+  <text x="50" y="94" font-size="11" fill="#085041">angle(n+1) = angle(n) + (gyro - bias)*dt</text>
+  <text x="50" y="110" font-size="11" fill="#085041">bias(n+1)  = bias(n)  (bias changes slowly)</text>
+  <text x="44" y="176" text-anchor="middle" font-size="14" font-weight="700" fill="#0F6E56">F =</text>
+<path d="M 78,130 L 68,130 L 68,202 L 78,202" fill="none" stroke="#0F6E56" stroke-width="2.5" stroke-linecap="square"/>
+  <text x="106" y="156" text-anchor="middle" font-size="14" fill="#0F6E56" font-family="'Courier New', monospace">1</text>
+  <text x="168" y="156" text-anchor="middle" font-size="14" fill="#0F6E56" font-family="'Courier New', monospace">-dt</text>
+  <text x="106" y="188" text-anchor="middle" font-size="14" fill="#0F6E56" font-family="'Courier New', monospace">0</text>
+  <text x="168" y="188" text-anchor="middle" font-size="14" fill="#0F6E56" font-family="'Courier New', monospace">1</text>
+<path d="M 216,130 L 226,130 L 226,202 L 216,202" fill="none" stroke="#0F6E56" stroke-width="2.5" stroke-linecap="square"/>
+  <text x="106"  y="214" text-anchor="middle" font-size="9" fill="#888">angle</text>
+  <text x="168" y="214" text-anchor="middle" font-size="9" fill="#888">bias</text>
+  <text x="215" y="228" text-anchor="middle" font-size="10" fill="#888" font-style="italic">F[0][1]=-dt: gyro bias subtracted from angle update</text>
+  <!-- H matrix -->
+  <rect x="430" y="50" width="360" height="190" rx="8" fill="#FAEEDA" stroke="#FAC775" stroke-width="1.5"/>
+  <text x="610" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#633806">H — Observation Matrix</text>
+  <text x="450" y="94" font-size="11" fill="#633806">z(n) = accelerometer angle (observes angle only)</text>
+  <text x="450" y="110" font-size="11" fill="#633806">H selects angle from state vector, ignores bias</text>
+  <text x="444" y="156" text-anchor="middle" font-size="14" font-weight="700" fill="#854F0B">H =</text>
+<path d="M 478,130 L 468,130 L 468,166 L 478,166" fill="none" stroke="#854F0B" stroke-width="2.5" stroke-linecap="square"/>
+  <text x="506"  y="154" text-anchor="middle" font-size="14" fill="#854F0B" font-family="'Courier New', monospace">1</text>
+  <text x="568" y="154" text-anchor="middle" font-size="14" fill="#854F0B" font-family="'Courier New', monospace">0</text>
+<path d="M 616,130 L 626,130 L 626,166 L 616,166" fill="none" stroke="#854F0B" stroke-width="2.5" stroke-linecap="square"/>
+  <text x="568" y="178" text-anchor="middle" font-size="9" fill="#888">bias (not visible)</text>
+  <text x="610" y="210" text-anchor="middle" font-size="11" fill="#854F0B" font-style="italic">z(n) = H * x = [1, 0] * [angle, bias]^T = angle</text>
+  <text x="610" y="228" text-anchor="middle" font-size="10" fill="#888" font-style="italic">setRmeasure(0.13): R = r = 0.13 (1x1 scalar, accel noise)</text>
+  <!-- Q matrix -->
+  <rect x="30" y="270" width="370" height="190" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="1.5"/>
+  <text x="215" y="292" text-anchor="middle" font-size="13" font-weight="700" fill="#085041">Q — Process Noise Matrix</text>
+  <text x="50" y="314" font-size="11" fill="#085041">Maps to: setQangle(0.003) and setQbias(0.003)</text>
+  <text x="50" y="330" font-size="11" fill="#085041">Off-diagonal=0: angle &amp; bias noise independent</text>
+  <text x="44" y="396" text-anchor="middle" font-size="14" font-weight="700" fill="#0F6E56">Q =</text>
+<path d="M 78,350 L 68,350 L 68,422 L 78,422" fill="none" stroke="#0F6E56" stroke-width="2.5" stroke-linecap="square"/>
+  <text x="106"  y="376" text-anchor="middle" font-size="13" fill="#0F6E56" font-family="'Courier New', monospace">0.003</text>
+  <text x="183" y="376" text-anchor="middle" font-size="13" fill="#0F6E56" font-family="'Courier New', monospace">0</text>
+  <text x="106"  y="408" text-anchor="middle" font-size="13" fill="#0F6E56" font-family="'Courier New', monospace">0</text>
+  <text x="183" y="408" text-anchor="middle" font-size="13" fill="#0F6E56" font-family="'Courier New', monospace">0.003</text>
+<path d="M 226,350 L 236,350 L 236,422 L 226,422" fill="none" stroke="#0F6E56" stroke-width="2.5" stroke-linecap="square"/>
+  <text x="215" y="438" text-anchor="middle" font-size="10" fill="#888" font-style="italic">Q_angle=0.003: gyro process noise | Q_bias=0.003: bias drift rate</text>
+  <text x="215" y="453" text-anchor="middle" font-size="10" fill="#888" font-style="italic">Small Q → trust model | Large Q → trust measurement more</text>
+  <!-- R and P note -->
+  <rect x="430" y="270" width="360" height="190" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="1.5"/>
+  <text x="610" y="292" text-anchor="middle" font-size="13" font-weight="700" fill="#3C3489">R &amp; P — Noise and Covariance</text>
+  <text x="450" y="316" font-size="12" font-weight="600" fill="#3C3489">R = r = 0.13  (scalar, 1 sensor)</text>
+  <text x="450" y="333" font-size="11" fill="#534AB7">setRmeasure(0.13) — accel variance</text>
+  <text x="450" y="349" font-size="11" fill="#534AB7">Large R: vibrating 8520 motor</text>
+  <text x="450" y="376" font-size="12" font-weight="600" fill="#3C3489">P₀ = initial covariance:</text>
+<path d="M 508,388 L 498,388 L 498,448 L 508,448" fill="none" stroke="#534AB7" stroke-width="2.5" stroke-linecap="square"/>
+  <text x="536"  y="410" text-anchor="middle" font-size="13" fill="#534AB7" font-family="'Courier New', monospace">10</text>
+  <text x="603" y="410" text-anchor="middle" font-size="13" fill="#534AB7" font-family="'Courier New', monospace">0</text>
+  <text x="536"  y="440" text-anchor="middle" font-size="13" fill="#534AB7" font-family="'Courier New', monospace">0</text>
+  <text x="603" y="440" text-anchor="middle" font-size="13" fill="#534AB7" font-family="'Courier New', monospace">10</text>
+<path d="M 646,388 L 656,388 L 656,448 L 646,448" fill="none" stroke="#534AB7" stroke-width="2.5" stroke-linecap="square"/>
+  <text x="610" y="438" text-anchor="middle" font-size="10" fill="#888" font-style="italic">High initial P: "we are uncertain about starting state"</text>
+  <text x="610" y="453" text-anchor="middle" font-size="10" fill="#888" font-style="italic">P converges as KF gathers measurements</text>
+  <rect x="10" y="510" width="800" height="48" rx="4" fill="#FFF9F0" stroke="#CCAA55" stroke-width="0.8"/>
+  <text x="410" y="524" text-anchor="middle" font-size="10" fill="#7A5C00">State vector x = [angle, gyro_bias]^T | Measurement z = [accel_angle] | F, Q: model matrices | H, R: sensor matrices</text>
+  <text x="410" y="538" text-anchor="middle" font-size="10" fill="#7A5C00">Covariance update (simplified): P(n,n) = (I-KH)*P(n,n-1) | Joseph form: P = (I-KH)*P*(I-KH)^T + K*R*K^T</text>
+  <text x="410" y="552" text-anchor="middle" font-size="10" fill="#7A5C00">R/Q ratio ≈ 43 (0.13/0.003) for 8520 motor — empirically tuned</text>
+</svg>

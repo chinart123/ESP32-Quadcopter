@@ -1,0 +1,67 @@
+<svg width="720" height="360" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="a"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#888780" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#C0504D" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#4472C4" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#E26B0A" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#4A9A4A" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="av" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#7B52AB" stroke-width="1.8" stroke-linecap="round"/></marker>
+    <marker id="at" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 2L8 5L1 8" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round"/></marker>
+  </defs>
+  <rect width="720" height="360" fill="white"/>
+  <rect x="0" y="0" width="720" height="30" fill="#EEF3FF"/>
+  <line x1="0" y1="30" x2="720" y2="30" stroke="#B0C0E8" stroke-width="0.8"/>
+  <text x="360" y="21" text-anchor="middle" font-size="13" font-weight="700" fill="#2C3E6B">Multivariate KF — Matrix Overview — Section 10</text>
+
+  <!-- F — State Transition -->
+  <rect x="20" y="45" width="210" height="90" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="1.5"/>
+  <text x="125" y="68" text-anchor="middle" font-size="14" font-weight="700" fill="#085041">F — State Transition</text>
+  <text x="125" y="88" text-anchor="middle" font-size="11" fill="#0F6E56">Models system dynamics</text>
+  <text x="125" y="105" text-anchor="middle" font-size="11" fill="#0F6E56">x(n+1,n) = F * x(n,n)</text>
+  <text x="125" y="122" text-anchor="middle" font-size="10" fill="#888">replaces scalar dt</text>
+
+  <!-- H — Observation -->
+  <rect x="255" y="45" width="210" height="90" rx="8" fill="#FAEEDA" stroke="#FAC775" stroke-width="1.5"/>
+  <text x="360" y="68" text-anchor="middle" font-size="14" font-weight="700" fill="#633806">H — Observation</text>
+  <text x="360" y="88" text-anchor="middle" font-size="11" fill="#854F0B">Maps state → measurement</text>
+  <text x="360" y="105" text-anchor="middle" font-size="11" fill="#854F0B">z = H * x</text>
+  <text x="360" y="122" text-anchor="middle" font-size="10" fill="#888">selects observable variables</text>
+
+  <!-- Q — Process Noise -->
+  <rect x="490" y="45" width="210" height="90" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="1.5"/>
+  <text x="595" y="68" text-anchor="middle" font-size="14" font-weight="700" fill="#085041">Q — Process Noise</text>
+  <text x="595" y="88" text-anchor="middle" font-size="11" fill="#0F6E56">Model uncertainty matrix</text>
+  <text x="595" y="105" text-anchor="middle" font-size="11" fill="#0F6E56">p(n+1,n) = F*P*F^T + Q</text>
+  <text x="595" y="122" text-anchor="middle" font-size="10" fill="#888">replaces scalar Q</text>
+
+  <!-- R — Measurement Noise -->
+  <rect x="20" y="160" width="210" height="90" rx="8" fill="#FAEEDA" stroke="#FAC775" stroke-width="1.5"/>
+  <text x="125" y="183" text-anchor="middle" font-size="14" font-weight="700" fill="#633806">R — Meas. Noise</text>
+  <text x="125" y="201" text-anchor="middle" font-size="11" fill="#854F0B">Sensor uncertainty matrix</text>
+  <text x="125" y="218" text-anchor="middle" font-size="11" fill="#854F0B">K = P*H^T*(H*P*H^T+R)^-1</text>
+  <text x="125" y="235" text-anchor="middle" font-size="10" fill="#888">replaces scalar r</text>
+
+  <!-- P — State Covariance -->
+  <rect x="255" y="160" width="210" height="90" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="1.5"/>
+  <text x="360" y="183" text-anchor="middle" font-size="14" font-weight="700" fill="#3C3489">P — State Covariance</text>
+  <text x="360" y="201" text-anchor="middle" font-size="11" fill="#534AB7">Estimate uncertainty matrix</text>
+  <text x="360" y="218" text-anchor="middle" font-size="11" fill="#534AB7">P(n,n) = (I-KH)*P(n,n-1)</text>
+  <text x="360" y="235" text-anchor="middle" font-size="10" fill="#888">replaces scalar p</text>
+
+  <!-- K — Kalman Gain -->
+  <rect x="490" y="160" width="210" height="90" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="1.5"/>
+  <text x="595" y="183" text-anchor="middle" font-size="14" font-weight="700" fill="#3C3489">K — Kalman Gain</text>
+  <text x="595" y="201" text-anchor="middle" font-size="11" fill="#534AB7">Computed from P, H, R</text>
+  <text x="595" y="218" text-anchor="middle" font-size="11" fill="#534AB7">K = P*H^T*(H*P*H^T+R)^-1</text>
+  <text x="595" y="235" text-anchor="middle" font-size="10" fill="#888">replaces scalar K(n)</text>
+
+  <!-- Analogy row -->
+  <line x1="20" y1="270" x2="700" y2="270" stroke="#D3D1C7" stroke-width="0.8" stroke-dasharray="4 3"/>
+  <text x="360" y="288" text-anchor="middle" font-size="11" fill="#888780">1D analogy:  scalar x  →  vector x(state)     scalar p, Q, r  →  matrices P, Q, R</text>
+  <text x="360" y="306" text-anchor="middle" font-size="11" fill="#888780">scalar gain K(n)  →  matrix K     scalar dt  →  transition matrix F     direct meas  →  H</text>
+
+  <!-- Legend box -->
+  <rect x="10" y="325" width="700" height="30" rx="4" fill="#FFF9F0" stroke="#CCAA55" stroke-width="0.8"/>
+  <text x="360" y="337" text-anchor="middle" font-size="10" fill="#7A5C00">Green = model matrices (F, Q) | Amber = measurement matrices (H, R) | Purple = computed (P, K)</text>
+  <text x="360" y="351" text-anchor="middle" font-size="10" fill="#7A5C00">All equations generalise naturally: multiply → matrix multiply | division → matrix inverse</text>
+</svg>
