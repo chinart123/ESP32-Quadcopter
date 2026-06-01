@@ -85,7 +85,7 @@ Kalman Filter là thuật toán ước lượng trạng thái (**state estimatio
 ---
 
 ## 4. Example 1 — Cân vàng (α filter, static system)
-
+![Alpha Filter — General System](../../assets/M3-assets/diag_03b_alpha_gen.png) 
 ### Bối cảnh
 
 Ước lượng khối lượng một thỏi vàng bằng cách cân nhiều lần. Cân có noise ngẫu nhiên. Trọng lượng không đổi → **static system**.
@@ -110,6 +110,8 @@ Trong đó:
 ![Alpha Filter — Equations](../../assets/M3-assets/diag_03b_alpha_eq.svg)
 
 *Diagram B — Cùng layout, thay bằng ký hiệu: State Update Equation và α = 1/n.*
+
+
 
 ### Kết quả số (True value = 1000g)
 
@@ -138,7 +140,11 @@ Trong đó:
 ---
 
 ## 5. Example 2 — Radar constant velocity (α-β filter)
+*Diagram — General System.*
 
+![Alpha-Beta Filter — General System](../../assets/M3-assets/diag_04c_alphabeta_gen.png)
+*Diagram — General System.* 
+### Chọn α và β
 ### Bối cảnh
 
 Track máy bay di chuyển với **vận tốc không đổi**. State có **2 biến**: position x và velocity ẋ.
@@ -165,7 +171,6 @@ $$\hat{\dot{x}}_{n,n} = \hat{\dot{x}}_{n,n-1} + \frac{\beta}{\Delta t}(z_n - \ha
 
 *Diagram B — Equations: innovation được dùng để update cả position (với α) và velocity (với β/dt).*
 
-### Chọn α và β
 
 | Precision | α | β | Behaviour |
 |---|---|---|---|
@@ -259,9 +264,6 @@ $$\hat{x}_{n,n} = \hat{x}_{n,n-1} + K_n(z_n - \hat{x}_{n,n-1})$$
 **Eq 5 — Covariance Update:**
 $$p_{n,n} = (1 - K_n) \cdot p_{n,n-1}$$
 
-### Flow đầy đủ
-
-![KF 1D Loop](../../assets/M3-assets/diag_05_kf1d_loop.svg)
 
 ### Tại sao Kalman Gain tối ưu?
 
@@ -281,6 +283,11 @@ Nếu không có Q, p hội tụ về 0 sau vài chục iterations → filter kh
 $$p_{n+1,n} = p_{n,n} + Q$$
 
 Q lớn → model không chắc → p không hội tụ về 0 → filter luôn lắng nghe measurement.
+### Flow tổng quát(Uncertanty là Q)
+![KF 1D Loop](../../assets/M3-assets/diag_05_kf1d_loop_verbal.png)
+### Flow đầy đủ
+![KF 1D Loop](../../assets/M3-assets/diag_05_kf1d_loop.png)
+
 
 ### Chọn Q và R
 
