@@ -73,15 +73,18 @@ Kalman Filter là thuật toán ước lượng trạng thái (**state estimatio
 
 ![KF Evolution](../../assets/M3-assets/diag_02_evolution.svg)
 
-| Model | State | Gain | Lag Error | Uncertainty |
+| Model | State | Gain | Lag Error | Track Uncertainty? |
 |---|---|---|---|---|
-| α filter | Position | 1/n (giảm dần) | Có | Không |
-| α-β filter | Pos + Vel | Cố định α, β | Có | Không |
-| α-β-γ filter | Pos + Vel + Accel | Cố định α, β, γ | Không | Không |
-| KF 1D (no Q) | Scalar bất kỳ | **Tính động K(n)** | Tuỳ model | Có (p) |
-| KF 1D (with Q) | Scalar bất kỳ | **Tính động K(n)** | Tuỳ model | Có (p, Q) |
-| **Multivariate KF** | **Vector bất kỳ** | **Tính động K(n)** | Không | **Có (P, Q, R)** |
+| α filter | Position | 1/n — giảm dần, **không chọn được** | Có | ❌ |
+| α-β filter | Pos + Vel | Cố định α, β — **bạn phải tự chọn** | Có | ❌ |
+| α-β-γ filter | Pos + Vel + Accel | Cố định α, β, γ — **bạn phải tự chọn** | Không | ❌ |
+| KF 1D (no Q) | Scalar bất kỳ | **Filter tự tính** K(n) từ p và r | Tuỳ model | ✅ Có (p) |
+| KF 1D (with Q) | Scalar bất kỳ | **Filter tự tính** K(n) | Tuỳ model | ✅ Có (p, Q) |
+| **Multivariate KF** | **Vector bất kỳ** | **Filter tự tính** K(n) | Không | ✅ **Có (P, Q, R)** |
 
+> **Tại sao "Track Uncertainty" là điểm mấu chốt?**  
+> Ba model đầu (α, α-β, α-β-γ) không biết mình đang sai bao nhiêu → **phải hardcode gain thủ công**. Nếu sensor đột nhiên nhiễu hơn, filter không biết để phản ứng.  
+> KF thì **tự đo độ sai của chính mình** (qua p) và tự điều chỉnh gain mỗi bước — không cần người tuning.
 ---
 
 ## 4. Example 1 — Cân vàng (α filter, static system)
@@ -244,30 +247,40 @@ $$\hat{\ddot{x}}_{n,n} = \hat{\ddot{x}}_{n,n-1} + \frac{2\gamma}{\Delta t^2} \cd
 > Variance = $\mathbb{E}[(X - \mu)^2]$ — đây chính là second central moment.
 
 ### 5 Phương trình KF 1D (không có Q)
+![1D-Loop Kalman model](../../assets/M3-assets/diag_05_kf1d_NO-Q_loop.png)
+> **Cách đọc:** Mỗi phương trình có phần *Nghĩa là* bằng lời — hiểu phần đó là đủ để defend.
 
 **Eq 1 — State Extrapolation:**
 $$\hat{x}_{n+1,n} = \hat{x}_{n,n}$$
+*Nghĩa là:* Dự đoán bước tiếp theo = giá trị hiện tại. Với static system (cân vàng không di chuyển), prediction đơn giản là "nó vẫn như cũ". Dynamic system thì cộng thêm `velocity × dt`.
 
 **Eq 2 — Covariance Extrapolation:**
 $$p_{n+1,n} = p_{n,n}$$
+*Nghĩa là:* Độ không chắc của prediction = độ không chắc hiện tại, không tăng không giảm. Đây chính là **điểm yếu của no-Q**: không có gì bơm thêm uncertainty vào → p giảm dần về 0 → filter ngừng tin measurement.
 
 **Eq 3 — Kalman Gain:**
 $$\boxed{K_n = \frac{p_{n,n-1}}{p_{n,n-1} + r}}$$
-
-- $p_{n,n-1}$ — predicted state variance
-- $r$ — measurement variance
-- K ∈ [0,1]: nếu p >> r → K → 1 (tin measurement); nếu r >> p → K → 0 (tin prediction)
+*Nghĩa là:* Gain = "model đang sai bao nhiêu" ÷ ("model sai" + "sensor sai"). Nếu model rất không chắc (p lớn) → K gần 1 → tin measurement nhiều. Nếu sensor rất không chắc (r lớn) → K gần 0 → tin prediction nhiều. **Khác hoàn toàn α-β-γ: gain này tự tính mỗi bước, không hardcode.**
 
 **Eq 4 — State Update:**
 $$\hat{x}_{n,n} = \hat{x}_{n,n-1} + K_n(z_n - \hat{x}_{n,n-1})$$
+*Nghĩa là:* Estimate mới = prediction + K × (measurement − prediction). Phần `(z_n − x̂)` gọi là **innovation** — "tin tức mới" từ sensor. K quyết định mình nghe innovation đó bao nhiêu phần trăm.
 
 **Eq 5 — Covariance Update:**
 $$p_{n,n} = (1 - K_n) \cdot p_{n,n-1}$$
-
+*Nghĩa là:* Sau khi có thêm measurement, ta chắc hơn → uncertainty giảm. Đây là lý do p hội tụ về 0 khi không có Q — filter ngày càng "tự tin" quá mức đến chỗ không chịu nghe measurement nữa.
 
 ### Tại sao Kalman Gain tối ưu?
 
-K được chọn để **minimize variance của estimate** $p_{n,n}$. Đây là lý do KF được gọi là **optimal filter** (với điều kiện noise là Gaussian và system là linear).
+K được chọn để **minimize variance của estimate** $p_{n,n}$ — đây là lý do KF được gọi là **optimal filter**.
+
+> **"noise Gaussian và system linear" — giải thích cho người không học xác suất:**
+>
+> **Noise Gaussian** nghĩa là noise dao động ngẫu nhiên đều hai bên quanh 0 — lúc +0.1°, lúc −0.08°, không bao giờ luôn lệch một chiều. Accelerometer của MPU6050 khi drone hover đáp ứng điều này. KF vẫn chạy được với noise không Gaussian, nhưng không còn đảm bảo là filter tốt nhất có thể.
+>
+> **System linear** nghĩa là phương trình state chỉ dùng cộng và nhân — không có sin, cos, atan2. Thực ra `atan2(ay, az)` để tính góc từ accelerometer là **nonlinear**. Nhưng với góc nhỏ khi hover (±15°), atan2 ≈ tuyến tính đủ để KF hoạt động tốt. Nếu drone lật 45° trở lên thì cần Extended KF (EKF).
+>
+> **Câu trả lời cho thầy:** *"Trong điều kiện hover thực tế, cả hai giả định đều đúng gần đủ: noise từ MPU6050 gần Gaussian, góc nhỏ nên system gần linear. Nếu cần support góc lớn hơn 30°, bước tiếp theo là nâng lên Extended KF."*
 
 ---
 
