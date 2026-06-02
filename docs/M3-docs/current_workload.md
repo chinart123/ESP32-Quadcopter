@@ -1,31 +1,51 @@
 # MISSION CONTEXT: SENSOR FUSION MERGE & YAW ANCHORING
 **Role:** Senior Embedded Flight Control Engineer
 **Target Platform:** ESP32-S3 Supermini (Dual-core, FPU enabled)
-**Actuation:** 8520 Coreless Motors running at 4kHz PWM (via `drn_timer_pwm.c`)
+**Actuation:** 8520 Coreless Motors running at **8kHz PWM**
 
-## 1. HARDWARE & ARCHITECTURE STATUS
-The flight controller is currently split into two independent modules that need to be merged into a unified Cascaded PID system.
+## 1. HISTORICAL CODEBASE & LIBRARY CONTEXT
+The flight controller relies on a custom hardware abstraction library for the IMU, combined with the main `.ino` logic. None of the main flight codes have ever integrated the PMW3901 Optical Flow sensor.
 
-**Module A: Main Flight Controller (File: `flycode_Yaw_ok_thang5.ino`)**
-- **Sensors:** MPU6050 (Attitude via I2C at 400kHz) + VL53L1X (Altitude Hold via I2C).
-- **Current State:** Achieved stable hover and Altitude Hold. The Yaw axis is stabilized to ~90% using extreme Gyro Bias Calibration (Auto-Zero), an I-term PID, and a Deadband filter.
-- **Deficiency:** Lacks absolute heading reference. Macro-drift on the Yaw axis still occurs over time.
+### 1.1 The IMU Library (`HungVo_IMU.h` & `HungVo_IMU.cpp`)
+This custom library handles I2C communication and raw data extraction. Crucially, it contains the **Static Gyro Bias Calibration** logic that fixes ~60% of the Yaw drift by averaging thousands of samples at startup.
+*Snippet from `HungVo_IMU.cpp`:*
+```cpp
+void HungVo_IMU::calibrate(int samples) {
+  float sumGX=0, sumGY=0, sumGZ=0;
+  for(int i=0; i<samples; i++) {
+    readBurst();
+    sumGX += (float)_gx/65.5; sumGY += (float)_gy/65.5; sumGZ += (float)_gz/65.5;
+    delay(1);
+  }
+  _offGX = sumGX/samples; 
+  _offGY = sumGY/samples; 
+  _offGZ = sumGZ/samples; // Capturing static Yaw drift offset
+}
+```
 
-**Module B: Optical Flow Subsystem (File/Tab: `Optical Sensor-v5`)**
+### 1.2 The Legacy Main Code (`droneflightcode.ino`)
+The previous stable version. It utilized a basic 1D Kalman filter and a highly aggressive 16kHz PWM output.
+- **Flaw:** Only featured P and D terms for Yaw, and did not dynamically update the Gyro Bias during flight. It also lacked SPI initialization for any optical sensor.
+
+### 1.3 The Current Main Code (`flycode_Yaw_ok_thang5.ino`)
+The latest iteration. It isolates the I2C buses (`I2C_IMU` and `I2C_TOF`), reduces PWM to **8kHz** for better torque, and introduces an I-term PID for Yaw alongside dynamic bias filtering.
+- **Flaw:** Still solely relies on MPU6050 for heading. Yaw macro-drift still exists over time due to the lack of an absolute spatial reference.
+
+## 2. OPTICAL FLOW SUBSYSTEM STATUS (`Optical Sensor-v5` tab)
 - **Sensor:** PMW3901 (Optical Flow via SPI).
-- **Current State:** Successfully initialized and running in **Motion Mode**. Frame grab bottleneck resolved. The non-blocking `millis()` loop outputs $\Delta X$ and $\Delta Y$ effectively at 100Hz.
-- **Deficiency:** Currently isolated. Not yet feeding data to the flight control loop.
+- **Current State:** Successfully initialized and running in **Motion Mode**. The frame-grab bottleneck is resolved. The non-blocking `millis()` loop currently prints $\Delta X$ and $\Delta Y$ at 100Hz.
+- **Deficiency:** Fully isolated from `flycode_Yaw_ok_thang5.ino`.
 
-## 2. THE OBJECTIVE (YOUR TASK)
-I need you (Claude) to merge Module B into Module A to execute **Yaw Anchoring (Cross-track Error Correction)**, fixing the remaining 10-15% Yaw drift. 
+## 3. THE OBJECTIVE (YOUR TASK)
+I need you (Claude) to merge the SPI Optical Flow logic into `flycode_Yaw_ok_thang5.ino` to execute **Yaw Anchoring (Cross-track Error Correction)**, fixing the remaining Yaw drift.
 
-Please provide the fully merged `.ino` code fulfilling these specific requirements:
-1. **SPI Integration:** Move the PMW3901 SPI initialization and 100Hz non-blocking read logic from the test file into the `setup()` and `loop()` of `flycode_Yaw_ok_thang5.ino`.
-2. **Velocity Scaling:** Scale the raw $\Delta X$ and $\Delta Y$ from the PMW3901 using the `filteredHeight` from the VL53L1X to approximate actual planar velocity.
-3. **Yaw Anchoring Math:** Implement an Outer Loop calculation: When the RC input commands strictly forward flight (high Pitch, near-zero Roll), use `atan2f(Delta_X, Delta_Y)` to detect the cross-track slip angle.
-4. **PID Injection:** Inject this computed slip angle as an error correction term into the existing Yaw PID controller to force the drone to lock its heading to the actual trajectory vector.
+Please provide the fully merged C++ code fulfilling these requirements:
+1. **SPI Integration:** Move the PMW3901 initialization and 100Hz non-blocking read logic into `flycode_Yaw_ok_thang5.ino`.
+2. **Velocity Scaling:** Scale the raw $\Delta X, \Delta Y$ using `filteredHeight` from the VL53L1X.
+3. **Yaw Anchoring Math (Outer Loop):** When the RC input commands strictly forward flight (high Pitch, near-zero Roll), use `atan2f(Delta_X, Delta_Y)` to detect the cross-track slip angle.
+4. **PID Injection:** Inject this computed slip angle as an error correction term into the existing Yaw PID controller.
 
-## 3. TARGET SYSTEM ARCHITECTURE (VISUALIZED)
+## 4. TARGET SYSTEM ARCHITECTURE (VISUALIZED)
 ```mermaid
 graph TD
     classDef hw fill:#2d3436,color:#fff,stroke:#b2bec3,stroke-width:2px;
@@ -43,7 +63,5 @@ graph TD
 
     P1 --> M[Motor Mixer]:::sw
     P2 --> M
-    M --> PWM[PWM Actuation @ 4kHz]:::hw
+    M --> PWM[PWM Actuation @ 8kHz]:::hw
 ```
-
-**Output Requirement:** Do not explain basic concepts. Output the complete, refactored C++ code ready for flashing.
