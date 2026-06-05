@@ -1,0 +1,86 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{padding:1rem 0;font-size:13px}
+.ver{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:12px;overflow:hidden}
+.ver-head{display:grid;grid-template-columns:120px 1fr;gap:0}
+.badge{padding:10px 14px;display:flex;flex-direction:column;gap:4px;border-right:0.5px solid var(--color-border-tertiary)}
+.vname{font-size:12px;font-weight:500}
+.vstatus{font-size:11px;padding:2px 7px;border-radius:4px;display:inline-block;font-weight:500;width:fit-content}
+.s-done{background:#C0DD97;color:#27500A}
+.s-next{background:#9FE1CB;color:#085041}
+.s-main{background:#B5D4F4;color:#0C447C}
+.s-future{background:#D3D1C7;color:#444441}
+.goal{padding:10px 14px;display:flex;flex-direction:column;gap:3px}
+.glbl{font-size:11px;color:var(--color-text-secondary);font-weight:500;text-transform:uppercase;letter-spacing:.03em}
+.gtxt{font-size:13px;color:var(--color-text-primary);font-weight:500;line-height:1.4}
+.body{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border-top:0.5px solid var(--color-border-tertiary)}
+.col{padding:10px 14px;border-right:0.5px solid var(--color-border-tertiary)}
+.col:last-child{border-right:none}
+.clbl{font-size:11px;color:var(--color-text-secondary);font-weight:500;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+ul{padding-left:14px;color:var(--color-text-primary);line-height:1.6}
+li{margin-bottom:2px}
+.note{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.chip{display:inline-block;font-size:11px;padding:1px 6px;border-radius:3px;margin:1px 0;font-weight:500}
+.chip-g{background:#EAF3DE;color:#3B6D11}
+.chip-r{background:#FCEBEB;color:#A32D2D}
+.v0h{background:var(--color-background-secondary)}
+.v1h{background:#F4FFFA}
+.v2h{background:#F0F6FE}
+.v3h{background:#FAFAFA}
+</style>
+<div class="wrap">
+
+<div class="ver">
+  <div class="ver-head v0h">
+    <div class="badge"><span class="vname">v0 (hiện tại)</span><span class="vstatus s-done">✅ Done</span><span style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">flycode_Yaw_ok_thang5</span></div>
+    <div class="goal"><span class="glbl">Mục tiêu</span><span class="gtxt">Bay ổn định + giữ độ cao. Baseline cho mọi phiên bản sau.</span></div>
+  </div>
+  <div class="body">
+    <div class="col"><div class="clbl">Nhiệm vụ đã làm</div><ul><li>Kalman Roll/Pitch</li><li>VL53L1X PD hold</li><li>Yaw dynamic bias</li><li>PID I-term Yaw</li></ul></div>
+    <div class="col"><div class="clbl">Ưu điểm</div><ul><li>Flight tested, ổn định</li><li>Dual I2C bus</li><li>Tilt compensation</li><li>Anti-windup</li></ul></div>
+    <div class="col"><div class="clbl">Nhược điểm (so v1)</div><ul><li>Không có PMW3901</li><li>Yaw macro-drift còn</li><li>Arming 1 bước</li></ul></div>
+    <div class="col"><div class="clbl">Ghi chú</div><span class="note">Không tạo file mới. Đây là starting point — chỉ đọc, không sửa trực tiếp.</span></div>
+  </div>
+</div>
+
+<div class="ver">
+  <div class="ver-head v1h">
+    <div class="badge"><span class="vname">flight-code-v1</span><span class="vstatus s-next">🔄 Tiếp theo</span><span style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Bench test only</span></div>
+    <div class="goal"><span class="glbl">Mục tiêu</span><span class="gtxt">Tích hợp PMW3901 vào flycode. Xác nhận SPI không xung đột các peripheral khác.</span></div>
+  </div>
+  <div class="body">
+    <div class="col"><div class="clbl">Nhiệm vụ</div><ul><li>Update SPI pins → 10/11/12/13</li><li>Bitcraze init trong setup()</li><li>readMotionCount non-blocking 100Hz</li><li>Serial print ΔX/ΔY để verify</li><li>Arming 2 bước (sustained throttle-low)</li></ul></div>
+    <div class="col"><div class="clbl">Ưu điểm</div><ul><li>Chứng minh sensor chạy song song IMU/TOF</li><li>Không có correction → an toàn để bench test</li><li>Dễ debug (chỉ đọc số)</li></ul></div>
+    <div class="col"><div class="clbl">Nhược điểm (so v2)</div><ul><li>PMW3901 đọc nhưng chưa dùng</li><li>Yaw vẫn drift như v0</li><li>Chưa có Forward Flight Gate</li></ul></div>
+    <div class="col"><div class="clbl">Ghi chú</div><span class="note">Trước khi flash: tháo PMW3901 khỏi GPIO 4/5/6/7, nối lại GPIO 10/11/12/13.<br><br>Pass/Fail: Serial phải in ΔX/ΔY thay đổi khi di chuyển sensor.</span></div>
+  </div>
+</div>
+
+<div class="ver">
+  <div class="ver-head v2h">
+    <div class="badge"><span class="vname">flight-code-v2</span><span class="vstatus s-main">🎯 Milestone chính</span><span style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Yaw Anchoring active</span></div>
+    <div class="goal"><span class="glbl">Mục tiêu</span><span class="gtxt">Yaw Anchoring hoạt động trong flight. Đo và ghi nhận cải thiện drift để đưa vào Final Report.</span></div>
+  </div>
+  <div class="body">
+    <div class="col"><div class="clbl">Nhiệm vụ</div><ul><li>forwardFlightGate (5 điều kiện)</li><li>slip = atan2f(ΔX, ΔY)</li><li>Inject vào Yaw rate error</li><li>Tune YAW_ANCHOR_GAIN từ 0.3</li><li>Log fYaw drift trước/sau</li></ul></div>
+    <div class="col"><div class="clbl">Ưu điểm</div><ul><li>Yaw drift giảm rõ khi forward flight</li><li>Tham chiếu bên ngoài gyro</li><li>4/6 DOF kiểm soát</li><li>Có data cho Final Report</li></ul></div>
+    <div class="col"><div class="clbl">Nhược điểm (so v3)</div><ul><li>X/Y position vẫn chưa control</li><li>Chỉ hoạt động khi forward, không hover</li><li>Chưa có velocity scaling</li></ul></div>
+    <div class="col"><div class="clbl">Ghi chú</div><span class="note">Cần v1 pass trước. Flight test trong phòng kín.<br><br>Deliverable: bảng so sánh Yaw drift [°/phút] trước v0 và sau v2 → Final Report.</span></div>
+  </div>
+</div>
+
+<div class="ver">
+  <div class="ver-head v3h">
+    <div class="badge"><span class="vname">flight-code-v3</span><span class="vstatus s-future">📋 Post-Final</span><span style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Position Hold</span></div>
+    <div class="goal"><span class="glbl">Mục tiêu</span><span class="gtxt">X/Y Position Hold — giữ tọa độ ngang. 6/6 DOF kiểm soát đầy đủ.</span></div>
+  </div>
+  <div class="body">
+    <div class="col"><div class="clbl">Nhiệm vụ</div><ul><li>Velocity scaling (ΔX × height × k)</li><li>Tích phân pos_x, pos_y</li><li>X/Y PID → Roll/Pitch setpoint</li><li>Tilt compensation optical flow</li><li>Calibrate SCALE_FACTOR thực nghiệm</li></ul></div>
+    <div class="col"><div class="clbl">Ưu điểm</div><ul><li>6/6 DOF hoàn chỉnh</li><li>Hover chính xác tại chỗ</li><li>Đúng với tiêu đề "6DOF" của project</li></ul></div>
+    <div class="col"><div class="clbl">Nhược điểm</div><ul><li>Phức tạp nhất trong lộ trình</li><li>Cần calibrate SCALE_FACTOR</li><li>Integration drift không có GPS fix</li></ul></div>
+    <div class="col"><div class="clbl">Ghi chú</div><span class="note">Ngoài scope Final defense (deadline 15/6).<br><br>Không block bảo vệ — v2 đủ để demo Yaw Anchoring.</span></div>
+  </div>
+</div>
+
+</div>
