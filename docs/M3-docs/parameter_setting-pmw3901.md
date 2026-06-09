@@ -1,247 +1,236 @@
-**User:**
-đây rồi. tôi giữ yên 5s, kéo pmw3901 ra 10cm và giữ yên trong 10s, sau đó kéo về vị trí gốc và giữ 5s.
-tay tôi khi kéo con pmw3901 hơi run nên có thể hơi fail bạn nhé
+# PMW3901 — Hướng dẫn Calibrate & Tune Thông số
 
-không biết con pmw3901 này bị cái gì nữa
-
-**Model:**
-Chào bạn, đừng nản lòng nhé! Cảm biến PMW3901 của bạn **HOÀN TOÀN BÌNH THƯỜNG**, nó không bị hỏng và cũng không bị mù. 
-
-Tôi đã "soi" rất kỹ file `log-step5B.txt` bạn vừa gửi. Sự cố `px=0.000m` không nằm ở cảm biến, mà nằm ở **thuật toán Sensor Fusion đang làm việc quá tốt** để chống lại chính... đôi tay của bạn!
-
-Dưới đây là 2 thủ phạm chính đang "nuốt" sạch quãng đường 10cm của bạn:
-
-### 1. Kéo quá chậm: Bị "hố đen" POS_DEADBAND nuốt chửng
-Như bạn nói, bạn kéo 10cm nhưng tốc độ lại khá rề rà. Hãy nhìn vào log của bạn:
-> `[S3] Vraw_x=0.0011 Vraw_y=0.0002 OK`
-> `[S4] Vx=0.000 Vy=0.000 | px=0.000m py=0.000m OK`
-
-* Vận tốc thô (`Vraw`) mà cảm biến đo được lúc bạn kéo chỉ là **0.0011 m/s** (tức là 1.1 mm/giây - cực kỳ chậm).
-* Trong code Step 4 của bạn, ngưỡng ngắt nhiễu tĩnh đang được cài là **`POS_DEADBAND = 0.010`**.
-* **Luật của code:** Bất kỳ chuyển động nào có tốc độ dưới 0.010 m/s đều bị coi là "nhiễu tĩnh" và bị ép về 0. Do bạn kéo quá chậm, bộ lọc LPF tưởng rằng drone đang đứng im nhưng bị rung nhẹ, nên nó xóa sạch vận tốc (`Vx = 0.000`). Vì vận tốc = 0, nên tọa độ `px` mãi mãi không tăng lên được dù bạn có kéo xa đến mấy.
-
-### 2. Kéo bằng tay không: Gyro (MPU6050) "đánh nhau" với Camera
-Đây là một vấn đề kinh điển khi làm Sensor Fusion. Nhìn vào log:
-> `[S2] ... flow=0.0012 comp=0.0015 ...`
-
-* **`flow`** là quang năng thực tế thu được (12 đơn vị).
-* **`comp`** là bù trừ góc nghiêng từ con quay hồi chuyển Gyro (15 đơn vị).
-* Mặc dù bạn cố gắng giữ phẳng tay, nhưng tay người *luôn luôn* bị nghiêng và rung. MPU6050 cực kỳ nhạy, nó phát hiện tay bạn bị nghiêng nên nó tưởng drone đang bị nghiêng do gió. Nó lập tức lấy `flow` trừ đi `comp` để lọc nhiễu. Hậu quả là quãng đường thực tế bạn rê tay đã bị Gyro trừ đi gần hết!
-
-Sự kết hợp giữa **vận tốc chậm** và **nhiễu góc nghiêng do run tay** đã khiến thuật toán của bạn xóa sạch 10cm dịch chuyển đó.
+**Phạm vi:** Step 5B (hiệu chuẩn cảm biến) và Step 6 (tune Position PID) trong pipeline Sensor Fusion v3.  
+**Liên quan:** `v3.ino`, PMW3901 Optical Flow, VL53L1X ToF, MPU6050.
 
 ---
 
-### Cách khắc phục dứt điểm cho bài test Step 5B
-Để chứng minh thuật toán của bạn tính ra đúng $0.100m$, bạn phải "lừa" được con MPU6050 và vượt qua được cái `DEADBAND`. Hãy làm đúng setup vật lý sau:
+## 1. Kiến trúc điều khiển — "Mắt, Não, và Cơ bắp"
 
-1. **Dùng bệ trượt (Trọng tâm):** TUYỆT ĐỐI KHÔNG cầm drone lơ lửng trên tay. Hãy kiếm một chiếc hộp giấy (hoặc hộp nhựa) cao khoảng 10 - 15cm. Đặt phẳng drone lên mặt hộp đó.
-2. **Bề mặt sần sùi:** Đặt chiếc hộp lên tờ báo giấy hoặc tấm thảm.
-3. **Kéo dứt khoát:** Nắm vào cái hộp và **đẩy trượt cái hộp đi 10cm một cách dứt khoát** (chỉ tốn khoảng 0.5 đến 1 giây để trượt). Sau đó giữ chặt cái hộp đứng im.
+Trước khi đi vào thông số, cần nắm rõ **mỗi cảm biến đóng vai gì** trong hệ thống:
 
-**Vì sao cách này sẽ 100% thành công?**
-* Trượt bằng hộp giấy sẽ giữ drone **phẳng tuyệt đối 100%**. Gyro sẽ im lặng (`comp = 0`), toàn bộ `flow` sẽ được quy đổi thành quãng đường.
-* Trượt dứt khoát sẽ tạo ra vận tốc lớn (tầm $0.100 m/s$), dễ dàng xuyên thủng "hố đen" `POS_DEADBAND` (0.010 m/s), giúp `px` lập tức cộng dồn tọa độ.
+| Vòng | Tên | Cảm biến | Vai trò |
+|---|---|---|---|
+| Inner Loop | Attitude / Rate PID | MPU6050 | **Tiền đình** — giữ thăng bằng, chống lật |
+| Outer Loop | **Position PID** | **PMW3901 + ToF** | **Mắt + Não** — giữ vị trí, chống trôi |
 
-Bạn hãy thử lại đúng kịch bản "đẩy hộp" này nhé. Cảm biến của bạn đang làm việc rất xuất sắc, giờ chỉ cần bài test vật lý chuẩn hóa nữa thôi!
+### Sơ đồ Cascade PID — Toàn cảnh hệ thống
 
-***
+Hai vòng không hoạt động độc lập. Chúng nối tầng nhau: **đầu ra của Vòng Ngoài chính là lệnh đầu vào của Vòng Trong.** Đây là trái tim của kiến trúc Cascade PID.
 
-**User:**
-Vậy mục tiêu của step 5B là chỉnh những thông số nào trong code?
+```mermaid
+flowchart LR
+    RC(["🎮 RC\nSetpoint vị trí"])
 
-**Model:**
-Mục tiêu tối thượng của Step 5B là **kiểm định và tinh chỉnh "thước đo không gian"** của hệ thống Sensor Fusion. Nó đảm bảo rằng phần mềm của bạn hiểu đúng các đại lượng vật lý ở thế giới thực, chuyển đổi chính xác từ những pixel quang học vô hình thành số đo hệ Mét (`pos_x`, `pos_y`).
+    subgraph OUTER["VÒNG NGOÀI — Position PID  ·  ~50 Hz"]
+        PMW["PMW3901\nOptical Flow"]
+        TOF["VL53L1X\nToF"]
+        FUSE["Sensor Fusion\nSteps 1–5B\nSCALE_FACTOR · LPF · DEADBAND"]
+        PPID["Position PID\nKp_pos · Kd_pos"]
+        PMW & TOF --> FUSE --> PPID
+    end
 
-Khi thực hiện bài test trượt ngang (với bệ trượt hộp giấy như đã hướng dẫn), bạn sẽ quan sát kết quả để quyết định có cần chỉnh sửa **2 thông số cốt lõi** sau đây hay không:
+    subgraph INNER["VÒNG TRONG — Attitude PID  ·  ~500 Hz"]
+        MPU["MPU6050\nGyro + Accel"]
+        APID["Attitude PID\nKp_att · Kd_att"]
+        MTR["4 Motors\nPWM"]
+        MPU --> APID --> MTR
+    end
 
-### 1. Thông số `SCALE_FACTOR` (Chỉnh sai số quãng đường)
-Đây là hằng số góc quy đổi của ống kính PMW3901. Nó quyết định việc drone đo khoảng cách có đúng hay không.
-* **Tình huống PASS:** Kéo hộp đi đúng 10cm (100mm), biến `px` (tức `pos_x`) in ra nằm trong khoảng **`0.090m` đến `0.110m`**. Thuật toán đã đo chuẩn, không cần chỉnh gì thêm.
-* **Tình huống FAIL (Đo hụt):** Bạn kéo 10cm nhưng `px` chỉ ra `0.060m` (6cm). Thước đo đang bị ngắn. Bạn cần **TĂNG** `SCALE_FACTOR` lên.
-* **Tình huống FAIL (Đo lố):** Bạn kéo 10cm nhưng `px` phóng lên tận `0.150m` (15cm). Thước đo đang bị giãn. Bạn cần **GIẢM** `SCALE_FACTOR` xuống.
-* **Công thức tinh chỉnh nhanh:** `SCALE_FACTOR_MỚI = SCALE_FACTOR_CŨ × (Khoảng cách thực tế / Khoảng cách px đo được)`
+    RC --> PPID
+    PPID -->|"Roll/Pitch setpoint\n(góc nghiêng mục tiêu)"| APID
+    MTR --> DRN(["🚁 Drone"])
+    DRN -. "vị trí thực" .-> PMW
+    DRN -. "độ cao thực" .-> TOF
+    DRN -. "góc nghiêng thực" .-> MPU
+```
 
-### 2. Thông số `POS_DEADBAND` (Chỉnh phanh tĩnh)
-Dù ở Step 5A bạn đã set thông số này để ngắt nhiễu khi drone đứng yên từ đầu, nhưng Step 5B sẽ đặt nó vào một thử thách khắc nghiệt hơn: **Ngắt nhiễu dội lại sau khi dừng đột ngột**.
-* **Tình huống PASS:** Khi bạn đẩy hộp trượt 10cm rồi đập kịch vào cữ chặn chặn lại, `px` lập tức "đóng băng" ở `0.100m`.
-* **Tình huống FAIL:** Khi chạm cữ chặn và giữ cứng tay, `px` vẫn từ từ trôi nhích lên `0.102m... 0.105m` hoặc tụt xuống `0.095m`. Quán tính lọc của LPF (Low-Pass Filter) hoặc dư chấn từ MPU6050 đang làm rỉ dữ liệu vận tốc. 
-* **Cách xử lý:** Bạn cần **TĂNG nhẹ** `POS_DEADBAND` (ví dụ từ `0.010` lên `0.015`) để thuật toán dập tắt ngay lập tức mớ vận tốc rác sinh ra lúc phanh gấp.
+### Sự khác biệt giữa hai vòng
 
-Với hệ số `SCALE_FACTOR = 0.0012` mà bạn đã tính toán rất kỹ dựa trên độ cao ToF từ các vòng trước, khả năng cực kỳ cao là độ dài đo được của bạn đã rất chuẩn xác. Mục tiêu chính của Step 5B lần này thiên về việc **Xác nhận (Verify)** sự hoàn hảo của cỗ máy Sensor Fusion khi bạn dùng đúng phương pháp trượt bằng hộp giấy, thay vì phải tìm mò thông số lại từ đầu.
+|  | Vòng Trong (Inner Loop) | Vòng Ngoài (Outer Loop) |
+|---|---|---|
+| **Tốc độ** | Nhanh — ~500 Hz | Chậm hơn — ~50 Hz |
+| **Cảm biến** | MPU6050 (Gyro + Accel) | PMW3901 + VL53L1X ToF |
+| **Đơn vị xử lý** | Độ (°), rad/s | Mét (m), m/s |
+| **Đầu vào** | Góc Roll/Pitch mục tiêu | Tọa độ `pos_x`, `pos_y` |
+| **Đầu ra** | PWM → 4 motors trực tiếp | Roll/Pitch setpoint → Vòng Trong |
+| **Mục tiêu** | Giữ thăng bằng — chống lật | Giữ vị trí — chống trôi |
+| **Tune ở bước nào** | Riêng biệt, ngoài phạm vi tài liệu này | **Step 6** |
 
-***
-
-**User:**
-1. vậy còn vòng lặp PID dùng để tune riêng cho con pmw3901 là để tune chỉ số nào?
-2. step 6 có đồng nghĩa với tune PID chưa hay vẫn chỉ là 1 bước trung gian để đến bước tune PID cuối cùng?
-
-**Model:**
-Chào bạn, đây là những câu hỏi mang tính chốt hạ rất hay. Việc phân định rõ ràng ranh giới giữa cảm biến và thuật toán điều khiển sẽ giúp bạn (và bạn của bạn) không bị lạc lối khi bước vào giai đoạn bay thực tế.
-
-Để trả lời hai câu hỏi này, chúng ta cần làm rõ kiến trúc điều khiển của một chiếc drone. Nó sử dụng hệ thống **PID lồng nhau (Cascade PID)** gồm 2 vòng:
-* **Vòng trong (Inner Loop - Attitude/Rate PID):** Dùng dữ liệu từ MPU6050 để giữ thăng bằng (không bị lật).
-* **Vòng ngoài (Outer Loop - Position/Velocity PID):** Dùng dữ liệu từ PMW3901 + ToF để giữ vị trí (không bị trôi). 
-
-Dưới đây là giải phẫu chi tiết cho từng câu hỏi của bạn:
-
-### 1. Vòng lặp PID dùng với PMW3901 là để tune chỉ số nào?
-
-Trước hết, phải đính chính một chút về mặt khái niệm: **Chúng ta không tune PID "cho con PMW3901"**. 
-PMW3901 chỉ là con mắt (Cảm biến). Nhiệm vụ của nó kết thúc ngay khi nó cung cấp xong tọa độ `pos_x`, `pos_y` và vận tốc `V_real`. 
-Vòng lặp PID mà chúng ta nói đến ở đây là **Position PID (Vòng lặp điều khiển vị trí)**. Nó lấy kết quả của PMW3901 làm đầu vào, để tính toán ra lệnh điều khiển động cơ.
-
-Trong kiến trúc code hiện tại, vòng lặp này tập trung tune **2 chỉ số cốt lõi**:
-
-* **`Kp_pos` (Hệ số Kéo - Proportional):** * *Nhiệm vụ:* Nó nhìn vào sai số quãng đường (`0 - pos_x`) để tạo ra một góc nghiêng kéo drone ngược lại điểm gốc.
-    * *Tác dụng:* Nếu `Kp_pos` quá nhỏ, drone sẽ bị trôi tuột đi (sluggish) khi có gió thổi vì lực kéo về không đủ. Nếu `Kp_pos` quá lớn, drone sẽ giật giật, phản ứng quá gắt và bay lảo đảo.
-* **`Kd_pos` (Hệ số Phanh - Derivative):**
-    * *Nhiệm vụ:* Đây là lý do tại sao biến `V_real` ở Step 4 lại quan trọng đến vậy. Khâu D nhìn vào vận tốc thực tế (`V_real_x`, `V_real_y`) để hãm quán tính.
-    * *Tác dụng:* Khi khâu P kéo drone về gốc, quán tính sẽ làm nó bay vọt lố qua vạch đích (overshoot). Lúc này `Kd_pos` sẽ tạo ra một lực cản âm (đạp phanh) tỉ lệ thuận với tốc độ di chuyển, ép drone tịnh tiến chậm dần và neo lại mượt mà.
-
-*(Lưu ý: Trong Position PID của drone, người ta thường hiếm khi dùng khâu I (`Ki_pos`) vì nó dễ gây tích lũy sai số nguy hiểm làm drone lượn vòng tròn - toilet bowl effect).*
-
-### 2. Step 6 là bước trung gian hay là trùm cuối?
-
-**Step 6 CHÍNH LÀ bước tune PID cuối cùng (Trùm cuối) của tính năng Giữ vị trí!** Không còn bước nào sau nó nữa.
-
-Hãy nhìn lại toàn bộ quá trình phát triển hệ thống Sensor Fusion của bạn để thấy bức tranh tổng thể:
-* **Step 1 đến 3:** Chuẩn bị cảm biến rời rạc (Lọc nhiễu MPU6050, đo độ cao ToF, lấy vận tốc thô PMW3901).
-* **Step 4:** Lọc Low-Pass Filter (LPF) cho vận tốc và ngắt nhiễu tĩnh.
-* **Step 5A & 5B:** Hiệu chuẩn thước đo vật lý (`SCALE_FACTOR`, `POS_DEADBAND`).
-* *(Tất cả 5 bước trên đều đặt `CALIBRATION_MODE = 1`, drone không tự bay mà chỉ in log ra Serial để bạn kiểm tra "Mắt" và "Tiền đình" của nó có khỏe không).*
-
-**Và Step 6:** Lúc này, bạn tự tự tin 100% rằng tọa độ `pos_x`, `pos_y` được in ra Serial là chính xác với thực tế. Bạn chuyển **`CALIBRATION_MODE = 0`**, tắt cáp, cắm pin. 
-
-Tại Step 6, "Nguyên liệu" (tọa độ sạch) chính thức được bơm vào "Bộ não" (phương trình PID) để tự động ghi đè lên lệnh Roll/Pitch. Công việc duy nhất của bạn ở Step 6 là cầm tay điều khiển RC, bay lơ lửng, nhả cần ra, và thay đổi giá trị `Kp_pos`, `Kd_pos` cho đến khi drone dừng lại như một chiếc xe có phanh ABS.
-
-Vượt qua được Step 6, con drone của bạn đã hoàn thiện tính năng Loiter / Position Hold chuẩn công nghiệp! Tới lúc này, hãy nhắc bạn của bạn tập trung vào kịch bản trượt hộp giấy ở Step 5B để chốt sổ phần cứng trước khi tiến lên Step 6 nhé.
-
-***
-
-**User:**
-vậy còn cái log step 5B tôi fail lúc nãy là sao? bạn phân tích kĩ hơn được không?
-
-**Model:**
-Sự thất bại của bài test 5B vừa rồi là một ví dụ kinh điển về việc phần cứng thì hoàn hảo nhưng bị thuật toán "bóp nghẹt" do điều kiện test vật lý chưa chuẩn. Chúng ta sẽ "mổ xẻ" các chỉ số thực tế để xem chính xác điều gì đã xảy ra trong 3 công đoạn của cỗ máy Sensor Fusion.
-
-### 1. Thấu kính bị mất dấu (totX quá nhỏ)
-Trong một phân đoạn kéo tay của bạn, hệ thống ghi nhận:
-`[S2] dX=0 dY=0 | totX=6 totY=-25 | flow=0.0000 comp=0.0003`
-
-Với `SCALE_FACTOR = 0.0012` ở độ cao ~74cm, một quãng đường trượt 10cm (100mm) phải tạo ra khoảng **80 đến 83 pixel**. Tuy nhiên, biến `totX` (tổng pixel tích lũy trục X) chỉ đếm được vỏn vẹn **6 pixel**. 
-
-Khi bạn rê tay lơ lửng, độ cao tay lên xuống không đều khiến camera liên tục bị sai tiêu cự (mất nét), kết hợp với việc tay có thể vô tình che khuất ánh sáng rọi vào cảm biến. PMW3901 vì thế bị "mù" và bỏ lỡ hơn 90% quãng đường di chuyển thực tế.
-
-### 2. Sự bù trừ sai lệch từ Gyro (MPU6050)
-Đây là yếu tố "giết chết" 10% dữ liệu quang học ít ỏi còn sót lại. Phương trình cốt lõi của hệ thống xử lý ở Step 2 là:
-`Vận tốc góc thực tế = flow (Quang năng) - comp (Góc nghiêng từ Gyro)`
-
-Khi bạn cầm board mạch trên tay, bàn tay con người chắc chắn sẽ bị rung và nghiêng nhẹ. Con quay hồi chuyển MPU6050 cực kỳ nhạy bén, nó lập tức phát hiện ra các dao động nghiêng này (thể hiện qua biến `comp`). 
-
-Thuật toán ngay lập tức phản ứng: *"À, camera đang quét qua mặt đất do drone bị lật nghiêng, chứ không phải đang bay tới trước"*. Thế là nó lấy dữ liệu pixel từ PMW3901 trừ thẳng cho góc nghiêng của tay bạn, triệt tiêu luôn cả những chuyển động tịnh tiến thực sự.
-
-### 3. "Hố đen" POS_DEADBAND
-Sau khi bị hao hụt qua 2 bước trên, phần vận tốc rớt xuống Step 3 chỉ còn là những con số siêu nhỏ:
-`[S3] Vraw_x=0.0002 Vraw_y=0.0002 OK`
-
-Vận tốc thô `Vraw` lúc này chỉ đạt $0.0002 m/s$ (tức 0.2 mm/s). Trong code của bạn, có một "lớp khiên" gọi là `POS_DEADBAND` dùng để ép vận tốc về 0 nếu phát hiện drone đang lơ lửng đứng yên. Thường ngưỡng này được cài ở mức khoảng $0.010 m/s$. 
-
-Vì vận tốc kéo rề rà của bạn ($0.0002$) nhỏ hơn rất nhiều so với ngưỡng cắt nhiễu ($0.010$), thuật toán thẳng tay tước bỏ toàn bộ vận tốc này và ép `Vx = 0.000`. Khi vận tốc bằng 0, phép tích phân ở Step 4 sẽ không có gì để cộng dồn, dẫn đến tọa độ `px` bị đóng băng ở mức `0.000m` hoặc chỉ cộng dồn được vài milimet rác rưởi (`px = 0.003m`).
-
-***
-
-**Tổng kết lại:** Cả 3 lớp phòng ngự của thuật toán (Đếm pixel -> Trừ nhiễu nghiêng -> Ngắt nhiễu tĩnh) đã hoạt động chính xác 100% như thiết kế để chống lại các chuyển động "không rõ ràng". Kéo board bằng bàn tay lơ lửng chính là một chuyển động nhiễu.
-
-Đó là lý do bắt buộc phải đặt drone lên một chiếc hộp giấy phẳng và trượt dứt khoát trên mặt báo để:
-1. Giữ góc nghiêng bằng 0 tuyệt đối để vô hiệu hóa Gyro (`comp = 0`).
-2. Giữ camera luôn cố định độ cao để thu đủ ~80 pixel.
-3. Tạo ra vận tốc trượt đủ nhanh để xuyên thủng lớp khiên ngắt nhiễu `DEADBAND`.
-
-***
-
-**User:**
-Ủa là sao? Bạn nói nó không có pid cho con pmw3901 mà? 
-"Vòng trong (Inner Loop - Attitude/Rate PID): Dùng dữ liệu từ MPU6050 để giữ thăng bằng (không bị lật).
-Vòng ngoài (Outer Loop - Position/Velocity PID): Dùng dữ liệu từ PMW3901 + ToF để giữ vị trí (không bị trôi)."
-
-**Model:**
-À, tôi hiểu tại sao bạn bị rối chỗ này rồi! Đây là một sự nhầm lẫn về mặt từ ngữ rất hay gặp khi làm việc với hệ thống điều khiển tự động. 
-
-Ý của tôi là sự khác biệt giữa việc **"Cảm biến có PID"** và việc **"Hệ thống dùng data của cảm biến để chạy PID"**.
-
-Hãy để tôi làm rõ lại ranh giới này bằng một ví dụ trực quan nhất:
-
-### 1. PMW3901 (Cảm biến) = "Đôi mắt"
-Bản thân con chip PMW3901 **không hề có vòng lặp PID nào bên trong nó cả**. Nhiệm vụ duy nhất của nó là "nhìn" và báo cáo sự thật: *"Này ESP32, tôi vừa thấy cái sàn nhà trôi qua mặt tôi 10cm"*. 
-
-Nó giống như đôi mắt của bạn. Mắt chỉ để nhìn thấy bạn đang đi lệch khỏi vạch kẻ đường, chứ mắt không có cơ bắp để tự kéo bạn quay lại vạch. Vì vậy, chúng ta không thể "tune PID cho cái camera" được. Nếu camera nhìn sai, chúng ta phải sửa phần cứng (kê cao, đổi bề mặt, chỉnh `SCALE_FACTOR` như Step 5B).
-
-### 2. Vòng ngoài (Position PID) = "Bộ não & Cơ bắp"
-Đây chính là vòng lặp PID nằm trong **chip ESP32** (chứ không nằm trong PMW3901). Vòng lặp này đóng vai trò là "khách hàng" tiêu thụ dữ liệu của PMW3901.
-
-
-
-Quy trình nó diễn ra như sau:
-1. **PMW3901 (Đôi mắt):** Báo cáo tọa độ hiện tại là `pos_x = 0.1m` (drone đang bị gió thổi trôi tới trước 10cm).
-2. **Position PID (Bộ não):** Nhận được số `0.1m` này. Nó bắt đầu làm toán: 
-   * Mục tiêu là `0m` (đứng im).
-   * Lệch `0.1m` rồi! 
-   * Nó dùng biến `Kp_pos` (Hệ số kéo) để ra lệnh: *"Phải nghiêng drone ngửa ra đằng sau 5 độ để cản gió lại!"*
-3. **Attitude PID (Vòng trong cùng MPU6050):** Nhận lệnh nghiêng 5 độ, nó điều khiển 4 motor quay mạnh/yếu khác nhau để ép con drone ngửa ra đúng 5 độ.
+> **Cách nhớ nhanh:** Vòng Ngoài *quyết định muốn bay về đâu*, Vòng Trong *thực thi lệnh đó bằng cách nghiêng cánh*. Nếu Vòng Trong không ổn định, Vòng Ngoài cũng vô nghĩa — phải tune Inner trước, Outer sau.
 
 ---
 
-**Tóm lại:** Khi tôi nói *"không có PID cho con PMW3901"*, ý tôi là bạn **đừng nhầm lẫn việc cân chỉnh cảm biến quang học (Step 5) với việc cân chỉnh lực bay (Step 6)**. 
-
-* Ở Step 5, bạn đang "khám mắt" cho drone (`SCALE_FACTOR`). Mắt phải sáng, nhìn phải chuẩn 10cm ra đúng 10cm.
-* Ở Step 6, bạn mới thực sự đụng vào PID (`Kp_pos`, `Kd_pos`). Lúc này mắt đã sáng rồi, bạn đang "huấn luyện cơ bắp" để drone biết phản xạ mạnh hay nhẹ khi bị gió thổi lệch đi. 
-
-Vì vậy, "Vòng ngoài" đúng là dùng dữ liệu của PMW3901, nhưng vòng lặp PID đó thuộc về quyền kiểm soát của máy bay, không phải của cảm biến!
-
-***
-
-**User:**
-ủa vậy vì sao chúng ta không để cảm biến tự lo hết mà phải đi đo chi cho khổ? có phải là chúng ta đang sợ cảm biến bị sai lệch không?
-
-**Model:**
-Câu hỏi của bạn chạm đến đúng "linh hồn" của ngành chế tạo Robot và Hệ thống nhúng (Embedded Systems)! Sự hoài nghi này là hoàn toàn chính xác.
-
-Để trả lời ngắn gọn: **Không phải chúng ta sợ cảm biến "đo sai", mà là vì cảm biến bản chất nó rất "ngốc" và chỉ nhìn thấy một góc cực kỳ chật hẹp của thực tại.** Việc chúng ta phải hì hục đo đạc, tạo DEADBAND, nhân SCALE_FACTOR không phải là để sửa lỗi cho PMW3901, mà là để **"Dạy cho nó cách hiểu thế giới loài người"**.
-
-Hãy để tôi giải phẫu 3 lý do cốt lõi tại sao bạn không thể ném con PMW3901 lên drone và bảo nó "tự lo đi":
-
-### 1. Bất đồng ngôn ngữ: Cảm biến nói tiếng "Pixel", PID nói tiếng "Mét"
-PMW3901 là một cái camera. Cả cuộc đời nó chỉ biết đúng một việc: **Đếm số lượng điểm ảnh (pixel) bị trôi đi trên khung hình.**
-* Nó hoàn toàn không biết nó đang bay cách mặt đất bao xa.
-* Nó hoàn toàn không biết ống kính của nó có góc mở rộng bao nhiêu.
-* Nếu nó đếm được 100 pixel trôi qua, con số đó có nghĩa là gì? Nếu bay ở độ cao 10cm, 100 pixel đó tương đương bạn vừa di chuyển 2cm. Nhưng nếu bay ở độ cao 10 mét, 100 pixel đó có nghĩa là bạn vừa bay xa 2 mét!
-
-**Đó là lý do ta phải có Step 5B:** Bạn phải dùng thước kẻ đo 10cm, ép nó trượt đi, và tính ra `SCALE_FACTOR`. Cùng với con ToF báo độ cao ($Z_{true}$), bạn đang đóng vai trò là một "Thông dịch viên" dịch từ ngôn ngữ Pixel sang hệ Mét để bộ não PID có thể tính toán lực đẩy motor.
-
-### 2. "Ảo giác quang học" khi nghiêng (Tại sao cần Gyro?)
-Hãy tưởng tượng bạn đang đứng im tại chỗ, nhưng bạn lại **lắc đầu** nhìn sang trái rồi sang phải. Mắt bạn sẽ thấy cảnh vật lướt qua lướt lại, nhưng thực tế cơ thể bạn đâu có bước đi bước nào?
-
-Cảm biến PMW3901 bị mắc đúng cái chứng ảo giác này:
-* Khi drone đang lơ lửng, có một cơn gió tạt qua. Vòng lặp PID bên trong (Inner Loop) lập tức nghiêng drone (Roll/Pitch) để cản gió.
-* Khi drone nghiêng, camera PMW3901 sẽ chĩa lệch đi và thấy mặt đất trôi qua. Nó la lên: *"Á, tôi đang bị trượt đi với tốc độ 2m/s!"*.
-* Nếu bạn để PMW3901 "tự lo", vòng lặp Outer Loop sẽ nghe lời nó, giật nảy mình đẩy drone lao thẳng về phía ngược lại, và... bùm! Crash!
-
-**Đó là lý do ta ghép nó với MPU6050:** Con quay hồi chuyển sẽ đóng vai trò như "Tiền đình" của bạn, nó nhắc nhở camera: *"Không phải tao đang trượt đâu, là do tao đang nghiêng đấy, trừ cái ảnh ảo đó đi!"* (`flow - comp`). PMW3901 không thể tự làm điều này vì nó không có cảm biến thăng bằng bên trong.
-
-### 3. Căn bệnh vĩ đại của Toán học: Trôi dạt tích phân (Integration Drift)
-Bản chất của việc tìm ra Vị trí ($pos\_x$) là lấy Vận tốc cộng dồn theo thời gian.
-* Ngay cả khi drone nằm im phăng phắc trên bàn, do nhiễu vật lý của dòng điện, PMW3901 có thể vẫn rỉ ra một vận tốc siêu nhỏ, ví dụ: $0.001 m/s$.
-* $0.001 m/s$ nghe có vẻ vô hại, nhưng bộ vi xử lý cộng dồn 250 lần mỗi giây. Sau 1 phút đứng im, drone sẽ tưởng nó đã trôi đi $0.001 \times 60 = 0.06$ mét (6 cm). Sau 10 phút, nó tưởng nó trôi đi 60 cm.
-* Khi bay FPV, cảm giác drone cứ từ từ trôi lùi lại dù không có gió chính là do căn bệnh này.
-
-**Đó là lý do ta sinh ra POS_DEADBAND ở Step 5A:** Bạn phải can thiệp bằng code để "chặn họng" cái nhiễu này. Bạn ra lệnh: *"Nếu vận tốc dưới 0.01 m/s, coi như bằng 0 hết cho tao!"*. PMW3901 không biết lúc nào là nhiễu, lúc nào là bay thật. Chỉ có kỹ sư (là bạn) mới đưa ra được ranh giới ngắt nhiễu này.
+> **Ranh giới quan trọng nhất của toàn bộ tài liệu này:**  
+> PMW3901 chỉ là **đôi mắt** — nhiệm vụ của nó kết thúc ngay khi nó báo xong tọa độ `pos_x`, `pos_y`. Nó không có cơ bắp, không có PID bên trong. Vòng lặp PID nằm trong **ESP32**, dùng dữ liệu của PMW3901 làm đầu vào.
+>
+> - **Step 5 = "Khám mắt":** Mắt phải sáng, nhìn 10 cm phải ra đúng 10 cm.  
+> - **Step 6 = "Huấn luyện cơ bắp":** Mắt đã sáng rồi — giờ mới chỉnh drone biết phản xạ mạnh hay nhẹ khi bị gió thổi lệch.
 
 ---
 
-### Tổng kết: Chào mừng bạn đến với "Sensor Fusion"
-Cái quá trình nhọc nhằn mà bạn vừa trải qua có một cái tên học thuật rất kêu: **Sensor Fusion (Dung hợp cảm biến)**. 
+## 2. Step 5B — Hiệu chuẩn "Thước đo Không gian"
 
-Trong thực tế, không có một cảm biến đơn lẻ nào đủ hoàn hảo để hiểu thế giới. DJI, Tesla, hay SpaceX... đều phải làm y hệt như những gì bạn vừa làm: Lấy mắt (PMW3901) + lấy tiền đình (MPU6050) + lấy thước đo độ cao (ToF VL53L1X) + thêm một đống bộ lọc toán học (LPF, Deadband, Scale) để tạo ra một "Sự thật duy nhất" không thể sai lệch.
+Mục tiêu tối thượng của Step 5B là kiểm định **2 thông số cốt lõi** đảm bảo hệ thống hiểu đúng thế giới vật lý — tức là dịch chính xác từ những pixel quang học vô hình sang hệ Mét mà bộ não PID có thể tính toán được.
 
-Nên đừng cảm thấy khổ! Những thông số bạn vừa tune xong chính là ranh giới phân biệt giữa một món đồ chơi sinh viên rẻ tiền và một chiếc Drone mang đẳng cấp công nghiệp đấy!
+---
+
+### 2.1 `SCALE_FACTOR` — Người "Thông dịch viên" Pixel → Mét
+
+PMW3901 là một cái camera. Cả đời nó chỉ biết **đếm pixel trôi qua**. Nó không biết nó đang bay cách mặt đất bao xa, không biết góc ống kính là bao nhiêu. Hệ quả: cùng 100 pixel trôi qua, nhưng nếu bay ở độ cao 10 cm thì = 2 cm di chuyển; nếu bay ở 10 m thì = 2 m di chuyển!
+
+`SCALE_FACTOR` (kết hợp với ToF báo độ cao thực $Z_{true}$) chính là "thông dịch viên" dịch từ ngôn ngữ Pixel sang hệ Mét để bộ não PID hiểu được.
+
+| Tình huống | Triệu chứng | Hành động |
+|---|---|---|
+| ✅ PASS | Trượt 10 cm → `px` ra `0.090 m` đến `0.110 m` | Không cần chỉnh |
+| ❌ Đo hụt | Trượt 10 cm → `px` chỉ ra `~0.060 m` (thước đo đang ngắn) | **Tăng** `SCALE_FACTOR` |
+| ❌ Đo lố | Trượt 10 cm → `px` phóng lên `~0.150 m` (thước đo đang giãn) | **Giảm** `SCALE_FACTOR` |
+
+**Công thức chỉnh nhanh:**
+```
+SCALE_FACTOR_MỚI = SCALE_FACTOR_CŨ × (Khoảng_cách_thực / px_đo_được)
+```
+*Ví dụ: đo hụt 6 cm → `0.0012 × (0.100 / 0.060) = 0.0020`*
+
+---
+
+### 2.2 `POS_DEADBAND` — Lớp khiên chống "Trôi dạt Tích phân"
+
+Ngay cả khi drone nằm im phăng phắc trên bàn, PMW3901 vẫn rỉ ra nhiễu vận tốc siêu nhỏ, chừng 0.001 m/s. Nghe vô hại, nhưng bộ vi xử lý cộng dồn 250 lần mỗi giây — sau 1 phút đứng im, drone sẽ *tưởng* nó đã trôi đi 6 cm. Sau 10 phút, nó tưởng đã trôi đi 60 cm. Cảm giác drone cứ lặng lẽ trôi lùi dù không có gió khi bay FPV chính là "căn bệnh" này.
+
+`POS_DEADBAND` ra đời để "chặn họng" nhiễu đó: *"Nếu vận tốc dưới ngưỡng này, coi như bằng 0 hết!"* Step 5B kiểm tra thêm một thử thách khắc nghiệt hơn Step 5A: **ngắt nhiễu dội lại sau khi phanh đột ngột**.
+
+| Tình huống | Triệu chứng | Hành động |
+|---|---|---|
+| ✅ PASS | Sau khi dừng đột ngột, `px` đóng băng ngay lập tức | Không cần chỉnh |
+| ❌ FAIL | `px` tiếp tục nhích lên/xuống vài mm sau khi dừng | **Tăng nhẹ** `POS_DEADBAND` (ví dụ: `0.010` → `0.015`) |
+
+> ⚠️ Tăng `POS_DEADBAND` quá cao sẽ làm drone điếc với các chuyển động chậm hợp lệ. Chỉ tăng từng bước nhỏ.
+
+---
+
+## 3. Setup vật lý bắt buộc cho bài test
+
+**Tuyệt đối không cầm board lơ lửng trên tay để test.** Mục tiêu của setup bên dưới là phải *lừa được* con MPU6050 và xuyên thủng được "hố đen" Deadband bằng cách tạo điều kiện vật lý lý tưởng:
+
+```
+Bước 1: Đặt drone phẳng lên hộp giấy cao 10–15 cm
+Bước 2: Đặt hộp lên tờ báo / tấm thảm vải (bề mặt sần để hộp không trượt tự do)
+Bước 3: Nắm vào hộp, đẩy trượt ngang DỨT KHOÁT 10 cm trong ~0.5–1 giây
+Bước 4: Giữ chặt hộp đứng im hoàn toàn
+```
+
+**Tại sao cách này đảm bảo test hợp lệ:**
+
+- Mặt phẳng hộp giấy → góc nghiêng = 0° tuyệt đối → **Gyro im lặng** (`comp = 0`), toàn bộ `flow` được dịch thành quãng đường, không bị trừ đi
+- Độ cao cố định → camera thu đủ **~80 pixel** / 10 cm
+- Đẩy dứt khoát → vận tốc tạo ra ~0.1 m/s, dễ dàng **xuyên thủng "hố đen"** `POS_DEADBAND` (ngưỡng 0.010 m/s)
+
+---
+
+## 4. Giải phẫu lỗi Step 5B — Tại sao kéo bằng tay thì `px = 0.000`?
+
+Nếu bạn cầm board lơ lửng trên tay và thấy `px` không nhúc nhích, thuật toán đang hoạt động **đúng như thiết kế** — nó đang chống lại chính đôi tay của bạn qua 3 tầng lọc liên tiếp:
+
+### Tầng 1 — Camera bị "mù" (totX quá nhỏ)
+
+```
+[S2] dX=0 dY=0 | totX=6 totY=-25 | flow=0.0000 comp=0.0003
+```
+
+Lý thuyết: trượt 10 cm ở độ cao ~74 cm phải thu được **~80 pixel** (`totX ≈ 80`).  
+Thực tế log: `totX = 6` — camera bỏ lỡ hơn **90% quãng đường thực tế**.
+
+Nguyên nhân: tay cầm lơ lửng làm độ cao dao động liên tục → camera mất tiêu cự, bỏ lỡ gần như toàn bộ pixel. Đây là lỗi setup vật lý, không phải lỗi code hay lỗi cảm biến.
+
+---
+
+### Tầng 2 — Gyro "đánh nhau" với Camera
+
+```
+[S2] flow=0.0012   comp=0.0015
+```
+
+Phương trình Step 2: `V_thực = flow − comp`
+
+Tay người dù cố giữ phẳng vẫn luôn bị rung và nghiêng nhẹ. MPU6050 cực kỳ nhạy bén — nó phát hiện ra điều đó và nghĩ: *"drone đang bị nghiêng do gió, không phải đang tịnh tiến thật"*. Nó lấy `flow` trừ thẳng cho `comp`, vô tình triệt tiêu luôn cả quãng đường thực của bạn.
+
+Kết quả: `comp (0.0015) > flow (0.0012)` → `V_thực < 0` → thuật toán xóa sạch vận tốc.
+
+---
+
+### Tầng 3 — "Hố đen" POS_DEADBAND
+
+```
+[S3] Vraw_x=0.0002 Vraw_y=0.0002 OK
+```
+
+Sau 2 tầng trên, vận tốc còn sót lại chỉ là `0.0002 m/s` (tức 0.2 mm/s — cực kỳ chậm).  
+Ngưỡng `POS_DEADBAND = 0.010 m/s` → `0.0002 < 0.010` → ép `Vx = 0.000` → phép tích phân không có gì để cộng dồn → `px` đóng băng ở `0.000 m`.
+
+**Kết luận:** Cả 3 tầng lọc hoạt động chính xác 100% như thiết kế. `px = 0.000` là đúng — drone đang báo cáo trung thực rằng không nhận ra chuyển động hợp lệ nào. Lỗi nằm ở điều kiện test vật lý.
+
+---
+
+## 5. Step 6 — Tune Position PID (Trùm cuối)
+
+**Step 6 là bước tune PID cuối cùng** cho tính năng Position Hold. Không có bước nào sau đó nữa.
+
+Đây là lúc "nguyên liệu sạch" (tọa độ `pos_x`, `pos_y` đã được xác nhận chuẩn ở Step 5) chính thức được bơm vào "bộ não" (phương trình PID) để tự động ghi đè lên lệnh Roll/Pitch. Bạn chuyển `CALIBRATION_MODE = 0`, tắt cáp, cắm pin, bay lơ lửng, nhả cần — và chỉnh 2 chỉ số dưới đây cho đến khi drone dừng lại mượt mà như xe có phanh ABS.
+
+### Điều kiện tiên quyết
+- `CALIBRATION_MODE = 0`
+- Step 5B đã PASS: `px`, `py` đã xác nhận đúng với thực tế
+
+### Luồng dữ liệu bên trong Vòng Ngoài (Position PID)
+
+Đây là cái "bộ não" mà bạn sẽ tune ở Step 6. Sơ đồ dưới cho thấy từng con số đi qua đâu trước khi ra lệnh cho drone nghiêng:
+
+```mermaid
+flowchart LR
+    SP(["Setpoint\npos = 0 m\n(đứng yên tại gốc)"])
+    POS["pos_x thực tế\n(từ Sensor Fusion)"]
+    ERR(["Sai số\nerr = 0 − pos_x"])
+    KP["× Kp_pos\n→ lực kéo tỉ lệ\nvới khoảng lệch"]
+    VREAL["V_real\n(vận tốc thực từ PMW3901)"]
+    KD["× Kd_pos\n→ đạp phanh\ntỉ lệ với tốc độ"]
+    SUM(["Σ"])
+    OUT(["Roll/Pitch setpoint\n→ Vòng Trong\nAttitude PID"])
+
+    SP & POS --> ERR
+    ERR --> KP --> SUM
+    VREAL --> KD --> SUM
+    SUM --> OUT
+```
+
+Khâu **P** kéo drone về, khâu **D** phanh lại đúng lúc để không bị vọt lố. Đây cũng là lý do `V_real` (từ Step 4) quan trọng đến vậy — nó là nhiên liệu đầu vào trực tiếp cho khâu D.
+
+### Hai thông số cần tune tại Step 6
+
+| Thông số | Tên gọi | Nhiệm vụ | Quá nhỏ | Quá lớn |
+|---|---|---|---|---|
+| `Kp_pos` | Hệ số Kéo (P) | Nhìn vào sai số vị trí → nghiêng drone về điểm gốc | Drone trôi tự do, phục hồi ì ạch | Drone giật mạnh, lảo đảo |
+| `Kd_pos` | Hệ số Phanh (D) | Nhìn vào `V_real` → hãm quán tính khi về gốc | Drone bay vọt lố qua vạch đích (overshoot) | Drone phanh quá sớm, rung lắc |
+
+Khi khâu P kéo drone về gốc, quán tính sẽ làm nó bay vọt qua vạch đích. Lúc đó khâu D "đạp phanh" tỉ lệ với tốc độ di chuyển — đây chính là lý do `V_real` ở Step 4 quan trọng đến vậy: nó là dữ liệu đầu vào trực tiếp cho khâu D.
+
+> **Lưu ý:** Thường **không dùng `Ki_pos`** trong Position PID của drone vì dễ gây tích lũy sai số → drone lượn vòng tròn liên tục (toilet bowl effect).
+
+---
+
+## Phụ lục — Tại sao không để PMW3901 "tự lo"?
+
+Không phải vì cảm biến "đo sai" — mà vì **bản chất cảm biến rất "ngốc"**, chỉ nhìn thấy một góc cực kỳ chật hẹp của thực tại. Cái quá trình nhọc nhằn bạn vừa trải qua có một cái tên học thuật: **Sensor Fusion (Dung hợp cảm biến)**.
+
+| # | Vấn đề | Analogy | Giải pháp |
+|---|---|---|---|
+| 1 | PMW3901 nói tiếng **Pixel**, PID cần tiếng **Mét** | Camera không biết nó đang bay cao hay thấp | `SCALE_FACTOR` + ToF làm "thông dịch viên" |
+| 2 | Drone nghiêng → camera thấy mặt đất trôi → tưởng đang bay | Lắc đầu nhìn trái phải → mắt thấy cảnh vật trôi nhưng người đứng im | MPU6050 "tiền đình" trừ đi góc nghiêng (`flow − comp`) |
+| 3 | Nhiễu nhỏ tích phân theo thời gian → drift tọa độ | 0.001 m/s × 10 phút = 60 cm drift dù drone đứng im | `POS_DEADBAND` "chặn họng" nhiễu dưới ngưỡng |
+
+DJI, Tesla, SpaceX — tất cả đều làm y hệt: lấy mắt (PMW3901) + tiền đình (MPU6050) + thước đo độ cao (ToF VL53L1X) + bộ lọc toán học (LPF, Deadband, Scale) để tạo ra một "Sự thật duy nhất" đáng tin cậy.
+
+---
+
+*Tổng hợp từ session debug Step 5B — Project Windify, Group 21.*
