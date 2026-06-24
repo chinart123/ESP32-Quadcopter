@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6-DOF Drone Platform — Defense Slides (English / engineer version)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+<style>
+:root{
+  --bg:#ffffff; --beige:#f3ebdb; --beige2:#f1e7d6; --bar:#f3ebdb;
+  --title:#155e63; --faculty:#8c2d2d; --accent:#3d6da8; --amber:#e08a1e;
+  --ink:#2b2f36; --sub:#6b7280; --card:#faf7f1; --bd:#e6dcc8; --eqbg:#f1f8f7; --eqbd:#cfe3e2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Be Vietnam Pro',sans-serif;background:#e7e8ec;color:var(--ink);padding:34px 0 60px}
+.cap{width:1280px;margin:0 auto 8px;font-size:13px;color:#8a8f98;font-weight:600;letter-spacing:.3px}
+.slide{position:relative;width:1280px;height:720px;background:var(--bg);margin:0 auto 42px;overflow:hidden;border-radius:6px;box-shadow:0 12px 34px rgba(0,0,0,.13)}
+.blob{position:absolute;background:var(--beige2);z-index:0}
+.blob-tr{width:430px;height:400px;top:-160px;right:-120px;border-radius:46% 54% 52% 48%}
+.blob-bl{width:380px;height:340px;bottom:-150px;left:-120px;border-radius:52% 48% 50% 50%}
+.in{position:relative;z-index:2;height:100%;padding:0 60px 50px;display:flex;flex-direction:column}
+
+/* ---- content-slide header ---- */
+.head{display:flex;align-items:stretch;gap:16px;padding-top:26px}
+.logo{flex:0 0 auto;width:74px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:700;line-height:1.15;color:var(--accent);border:1.6px solid var(--accent);border-radius:10px;background:#fff;padding:6px}
+.logo.fast{color:var(--faculty);border-color:var(--faculty)}
+.bar{flex:1;background:var(--bar);border-radius:16px;padding:13px 24px;display:flex;flex-direction:column;justify-content:center}
+.stitle{font-size:29px;font-weight:800;color:var(--title);line-height:1.1;text-shadow:2px 2px 0 rgba(21,94,99,.16)}
+.faculty{font-size:11px;font-weight:700;letter-spacing:.6px;color:var(--faculty);margin-top:5px}
+.body{flex:1;padding-top:24px;min-height:0}
+.foot{display:flex;justify-content:space-between;font-size:10px;font-weight:600;letter-spacing:.4px;color:var(--faculty);opacity:.8}
+
+/* ---- generic content ---- */
+.lead{font-size:16px;color:var(--ink);line-height:1.55;margin-bottom:16px}
+.lead b{color:var(--title)}
+.hl{color:var(--amber);font-weight:700}
+.tg{color:var(--title);font-weight:700}
+ul.b{list-style:none;display:flex;flex-direction:column;gap:10px}
+ul.b li{position:relative;padding-left:22px;font-size:15px;line-height:1.5}
+ul.b li:before{content:'';position:absolute;left:0;top:9px;width:9px;height:9px;border-radius:2px;background:var(--accent)}
+
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;height:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.col-img{display:grid;grid-template-columns:1.05fr .95fr;gap:26px;align-items:center;height:100%}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column}
+.ic{width:46px;height:46px;border-radius:50%;background:#e8eef6;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px}
+.card h3{color:var(--title);font-size:18px;font-weight:700;margin-bottom:8px;line-height:1.2}
+.card p{font-size:13.5px;color:var(--ink);line-height:1.5}
+.card .lab{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.5px;margin-bottom:6px}
+
+.steps{display:flex;flex-direction:column;gap:14px}
+.step{display:flex;gap:18px;align-items:flex-start;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px 20px}
+.num{flex:0 0 auto;width:46px;height:46px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:22px;display:flex;align-items:center;justify-content:center}
+.step .t{font-size:15px;line-height:1.5}
+.step .t b{color:var(--title)}
+
+.eq{background:var(--eqbg);border:1px solid var(--eqbd);border-radius:12px;padding:14px 22px;margin:12px 0;text-align:center;color:#0e3b40;font-size:18px}
+.eq.small{font-size:15px;padding:10px 16px}
+
+.ph{border:2px dashed #c8bda2;border-radius:16px;background:#fbf8f1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#9a8f76;font-size:14px;font-weight:600;text-align:center;padding:24px;gap:8px;height:100%}
+.ph .pi{font-size:30px;opacity:.7}
+
+table.rt{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+table.rt th{background:var(--title);color:#fff;text-align:left;padding:12px 16px;font-weight:600;font-size:13px;letter-spacing:.3px}
+table.rt th:first-child{border-radius:10px 0 0 0}
+table.rt th:last-child{border-radius:0 10px 0 0;text-align:center}
+table.rt td{padding:12px 16px;border-bottom:1px solid var(--bd);vertical-align:top}
+table.rt td:last-child{text-align:center}
+table.rt tr:nth-child(even) td{background:#fbf8f1}
+.metric{font-weight:700;color:var(--ink)}
+.sub{color:var(--sub);font-size:12.5px}
+.pass{color:#2e7d32;font-weight:700;white-space:nowrap}
+
+.code{font-family:'JetBrains Mono',monospace;font-size:13px;background:#1e2933;color:#cfe9e6;border-radius:12px;padding:16px 20px;line-height:1.6;white-space:pre;overflow:auto}
+.code .c{color:#7e8b95}
+.code .k{color:#e0a96b}
+
+/* ---- big stat ---- */
+.stat{display:grid;grid-template-columns:.85fr 1.15fr;gap:30px;align-items:center;height:100%}
+.bignum{font-size:128px;font-weight:800;color:var(--amber);line-height:.9;text-align:center}
+.bignum small{display:block;font-size:20px;font-weight:600;color:var(--ink);margin-top:8px}
+.stat .txt h3{color:var(--title);font-size:22px;font-weight:700;margin-bottom:12px}
+.stat .txt p{font-size:15px;line-height:1.6;margin-bottom:10px}
+
+/* ---- block diagram ---- */
+.flow{display:flex;flex-direction:column;gap:14px;height:100%;justify-content:center}
+.frow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.fb{background:var(--card);border:1.5px solid var(--bd);border-radius:12px;padding:12px 16px;font-size:13.5px;font-weight:600;color:var(--ink);display:flex;align-items:center}
+.fb.acc{border-color:var(--accent);background:#eef3fa;color:var(--accent)}
+.fb.ti{border-color:var(--title);background:#eef6f5;color:var(--title)}
+.fb.core{flex-direction:column;align-items:flex-start;gap:6px;flex:1}
+.fb.core .ch{font-weight:800}
+.fb.core .cl{font-weight:400;font-size:12.5px;color:var(--ink)}
+.arrow{align-self:center;color:var(--accent);font-size:22px;font-weight:800}
+
+/* ---- title slide ---- */
+.title-slide{text-align:center}
+.ts-in{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 80px}
+.ts-eyebrow{font-size:14px;font-weight:700;letter-spacing:2px;color:var(--faculty);text-transform:uppercase;margin-bottom:24px}
+.ts-title{font-size:50px;font-weight:800;color:var(--title);line-height:1.08;text-shadow:3px 3px 0 rgba(21,94,99,.15);max-width:1000px}
+.ts-title span{color:var(--amber)}
+.ts-sub{font-size:20px;color:var(--sub);margin-top:18px;font-weight:500}
+.ts-div{width:120px;height:3px;background:var(--amber);margin:34px 0 28px;border-radius:2px}
+.ts-meta{font-size:17px;font-weight:700;color:var(--ink)}
+.ts-meta .l{display:block;font-size:15px;font-weight:400;color:var(--sub);margin-top:8px}
+
+/* ---- divider slide ---- */
+.divider-slide{text-align:center}
+.dv-in{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dv-tick{width:74px;height:6px;background:var(--amber);border-radius:3px;margin-bottom:26px}
+.dv-kicker{font-size:15px;font-weight:700;letter-spacing:3px;color:var(--faculty);text-transform:uppercase;margin-bottom:10px}
+.dv-title{font-size:46px;font-weight:800;color:var(--title);line-height:1.1;text-shadow:3px 3px 0 rgba(21,94,99,.14);max-width:980px;padding:0 40px}
+.dv-sub{font-size:18px;color:var(--sub);margin-top:16px;max-width:760px;padding:0 40px;line-height:1.5}
+
+/* ===== Reveal.js slideshow frame + corner logos ===== */
+.reveal{background:#0f141b;font-family:'Be Vietnam Pro',sans-serif}
+.reveal .slides{text-align:left}
+.reveal .slides>section{padding:0;width:1280px;height:720px;background:#fff;overflow:hidden;text-align:left;border-radius:4px;box-shadow:0 18px 55px rgba(0,0,0,.45)}
+.reveal .controls{color:#9fd0cf}
+.reveal .progress{color:var(--amber);height:5px}
+.reveal .slide-number{background:rgba(15,20,27,.6);color:#cfe9e6;font-size:13px}
+body{padding:0;margin:0;background:#0f141b}
+.slide{margin:0;box-shadow:none;border-radius:0}
+.head{padding:24px 78px 0}
+.foot{justify-content:flex-end}
+.corners{position:absolute;inset:0;z-index:6;pointer-events:none}
+.clogo{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:700;line-height:1.12;border:1.6px solid;border-radius:10px;background:#fff;padding:7px 10px}
+.clogo span{font-size:8px;font-weight:500;color:var(--sub)}
+.clogo.win{top:22px;left:24px;color:#0e7490;border-color:#0e7490}
+.clogo.bk{top:22px;right:24px;color:var(--accent);border-color:var(--accent)}
+.clogo.fast{bottom:18px;left:24px;color:var(--faculty);border-color:var(--faculty)}
+
+.clogo.fast{position:static;top:auto;bottom:auto;left:auto;right:auto}
+.fastlock{position:absolute;bottom:16px;left:24px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;pointer-events:none}
+.facname{margin-left:15px;font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--faculty);line-height:1.2;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+<section class="slide title-slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="ts-in">
+    <div class="ts-eyebrow">The University of Danang — University of Science and Technology · FAST</div>
+    <h1 class="ts-title">Design &amp; Implementation of a <span>6-DOF Drone Platform</span></h1>
+    <p class="ts-sub">Precision altitude and position hold for GPS-denied indoor flight</p>
+    <div class="ts-div"></div>
+    <div class="ts-meta">
+      Students: Vo Quoc Hung &amp; Pham Minh Chien
+      <span class="l">Supervisors: Dr. Ngo Dinh Thanh · Eng. Le Thai Bao Toan</span>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Presentation Outline</div></div></div>
+    <div class="body">
+      <div class="grid2" style="gap:18px">
+        <div class="card"><div class="lab">PART 1</div><h3>Problem &amp; Objectives</h3><p>The STEM-education story, the limits of existing solutions, and the quantitative targets we set.</p></div>
+        <div class="card"><div class="lab">PART 2</div><h3>System &amp; Theory</h3><p>System overview, hardware, theoretical foundation, and the full control + sensor-fusion algorithm.</p></div>
+        <div class="card"><div class="lab">PART 3</div><h3>Validation &amp; Results</h3><p>Wireless measurement method, live flight video, and experimental altitude / position data.</p></div>
+        <div class="card"><div class="lab">PART 4</div><h3>Conclusion</h3><p>Real operating limits, our contribution, and future work.</p></div>
+      </div>
+    </div>
+    <div class="foot"><span>Drone 6-DOF</span></div>
+  </div>
+</section>
+
+<section class="slide divider-slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="dv-in">
+    <div class="dv-tick"></div>
+    <div class="dv-kicker">Part 1</div>
+    <h2 class="dv-title">Problem &amp; Objectives</h2>
+    <p class="dv-sub">Why an indoor robotics platform must be auto-hovering, low-cost, and open-source for STEM education.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Problem Statement: The STEM Robotics Barrier</div></div></div>
+    <div class="body">
+      <div class="col-img">
+        <div>
+          <p class="lead"><b>Context:</b> Students practicing block-based programming (Blockly/Scratch) are overwhelmed when they must manually balance an unstable drone by hand.</p>
+          <p class="lead" style="margin-bottom:10px"><b>Limits of existing solutions:</b></p>
+          <ul class="b">
+            <li>Commercial drones (DJI Tello, ~$99): the flight algorithm is <b>fully closed</b> — no deep access for teaching.</li>
+            <li>Open-source stacks (Betaflight): designed for racing, <b>not optimized for low-cost-sensor auto-hover</b>.</li>
+          </ul>
+          <p class="lead" style="margin-top:16px"><span class="tg">&rArr; We need an auto-hovering, low-cost (&lt; $50), open-source platform.</span></p>
+        </div>
+        <div class="ph"><div class="pi">🖼️</div>Image: STEM classroom / educational drone<br><span style="font-size:12px;font-weight:400">(insert real photo in Canva)</span></div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 1 · Problem</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Quantitative Technical Objectives</div></div></div>
+    <div class="body">
+      <div class="grid3" style="grid-template-rows:1fr 1fr">
+        <div class="card"><div class="lab">ALTITUDE</div><h3 class="hl" style="color:var(--amber);font-size:26px">&lt; 5 cm</h3><p>Steady-state error while autonomously holding vertical altitude.</p></div>
+        <div class="card"><div class="lab">POSITION (XY)</div><h3 class="hl" style="color:var(--amber);font-size:26px">&lt; 10 cm</h3><p>Lateral drift radius when locking the center position.</p></div>
+        <div class="card"><div class="lab">RECOVERY</div><h3 class="hl" style="color:var(--amber);font-size:26px">&lt; 5 s</h3><p>Damp oscillation and regain balance after a disturbance.</p></div>
+        <div class="card"><div class="lab">ENDURANCE</div><h3 class="hl" style="color:var(--amber);font-size:26px">5 – 7 min</h3><p>Maintain a stable, continuous hover.</p></div>
+        <div class="card"><div class="lab">COST (BOM)</div><h3 class="hl" style="color:var(--amber);font-size:26px">&le; $50</h3><p>Total value of the constituent hardware components.</p></div>
+        <div class="card" style="background:#eef6f5;border-color:#cfe3e2;justify-content:center"><p style="color:var(--title);font-weight:600;font-size:14px">These five targets are the benchmark we check against in the Results section.</p></div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 1 · Objectives</span></div>
+  </div>
+</section>
+
+<section class="slide divider-slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="dv-in">
+    <div class="dv-tick"></div>
+    <div class="dv-kicker">Part 2</div>
+    <h2 class="dv-title">System &amp; Theory</h2>
+    <p class="dv-sub">The complete architecture and scientific basis of the solution — presented in full before the results.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">System Overview</div></div></div>
+    <div class="body">
+      <div class="flow">
+        <div class="frow">
+          <div class="fb acc">RC transmitter</div><div class="arrow">→</div>
+          <div class="fb acc">ELRS (UART)</div><div class="arrow">→</div>
+          <div class="fb core" style="flex:2">
+            <div class="frow" style="width:100%">
+              <div class="fb core"><span class="ch tg">Core 1 · 250 Hz</span><span class="cl">IMU → Kalman → PID Rate → PWM</span></div>
+              <div class="fb core"><span class="ch tg">Core 0 · 100 Hz</span><span class="cl">ToF / Flow → Fusion → Cascade PID</span></div>
+            </div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="fb ti">Motor mixing → 4× 8520 motors</div>
+        </div>
+        <div class="frow">
+          <div class="fb">Sensors (I²C 400 kHz): MPU6050 · VL53L1X · PMW3901</div>
+          <div class="arrow">↘</div>
+          <div class="fb acc">Telemetry ESP-NOW 2.4 GHz</div><div class="arrow">→</div>
+          <div class="fb">Ground Station · Teleplot</div>
+        </div>
+        <p class="lead" style="margin:6px 0 0;font-size:14px">A single <b>ESP32-S3 Supermini</b> (dual-core) handles everything: the fast core keeps balance, the slow core handles navigation — no LiDAR or vision computer needed.</p>
+      </div>
+    </div>
+    <div class="foot"><span>Part 2 · Overview</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Hardware Platform &amp; Interfaces</div></div></div>
+    <div class="body">
+      <div class="col-img">
+        <ul class="b" style="gap:14px">
+          <li><b>Central processor:</b> ESP32-S3 Supermini (Dual-Core 240 MHz) — enough headroom for floating-point matrix math.</li>
+          <li><b>Radio link:</b> RC + ExpressLRS (ELRS) receiver over UART, ultra-low control latency (&lt; 5 ms).</li>
+          <li><b>Sensor block:</b> 6-axis IMU MPU6050 · ToF VL53L1X · optical-flow PMW3901 — shared I²C bus at 400 kHz.</li>
+          <li><b>Actuation:</b> 8520 coreless motors, 4 kHz PWM through MOSFET drivers.</li>
+        </ul>
+        <div class="ph"><div class="pi">📷</div>Real drone photo + wiring diagram<br><span style="font-size:12px;font-weight:400">(insert product photo in Canva)</span></div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 2 · Hardware</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Technical Challenges vs. Core Solutions</div></div></div>
+    <div class="body">
+      <div class="steps">
+        <div class="step"><div class="num">1</div><div class="t"><b>Mechanical vibration noise:</b> vibration from the 8520 motors corrupts the accelerometer, causing angle drift. &nbsp;→&nbsp; <span class="tg">2-axis Kalman filter</span></div></div>
+        <div class="step"><div class="num">2</div><div class="t"><b>Computational bottleneck:</b> running positioning matrices and PID together stalls the MCU. &nbsp;→&nbsp; <span class="tg">Dual-Core FreeRTOS</span></div></div>
+        <div class="step"><div class="num">3</div><div class="t"><b>Ground effect:</b> reflected airflow breaks the linearity of a single-loop PID. &nbsp;→&nbsp; <span class="tg">Cascade PI-D</span></div></div>
+      </div>
+      <p class="lead" style="margin-top:18px;font-size:14px;color:var(--sub)">These three challenges are the roadmap for the entire theory section that follows.</p>
+    </div>
+    <div class="foot"><span>Part 2 · Challenges</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Theoretical Foundation &amp; References</div></div></div>
+    <div class="body">
+      <div class="grid2" style="grid-template-rows:1fr 1fr;gap:16px">
+        <div class="card"><div class="lab">[5] · DYNAMICS</div><h3>Quadrotor 6-DOF</h3><p>Newton-Euler model; rotation matrix $R$ from Euler angles (Roll $\phi$, Pitch $\theta$, Yaw $\psi$) between the Inertial &amp; Body frames.</p></div>
+        <div class="card"><div class="lab">[6] · ESTIMATION</div><h3>Kalman Filter (1960)</h3><p>Optimal state estimation from Gaussian-noisy data over two phases: Predict &amp; Update.</p></div>
+        <div class="card"><div class="lab">[11][12] · SENSING</div><h3>ToF &amp; Optical Flow</h3><p>ToF measures distance via the speed of light; optical flow analyzes surface-pixel displacement along X, Y.</p></div>
+        <div class="card"><div class="lab">[7] · CONTROL</div><h3>Cascade PID</h3><p>Two nested loops; the inner loop has wider bandwidth and samples 2–5× faster than the outer loop.</p></div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 2 · Theory</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Dynamics: Attitude–Altitude Coupling</div></div></div>
+    <div class="body">
+      <div class="col-img">
+        <div>
+          <p class="lead">The total thrust vector from the 4 motors is always normal to the body frame. When the drone <b>tilts to translate</b> (Roll $\phi$, Pitch $\theta$), the projection of thrust onto the vertical Z axis <b>drops instantly</b> → altitude loss unless compensated.</p>
+          <div class="eq">$$ u_z(t) = \frac{T_{total}\cdot\cos(\phi)\cdot\cos(\theta)}{m} - g $$</div>
+          <p class="lead" style="font-size:14px">The system needs continuous <b>feedforward</b> compensation against tilt — this is the root of the altitude-hold problem.</p>
+        </div>
+        <div class="ph"><div class="pi">🛩️</div>3D figure: Body/Inertial frames<br>+ thrust decomposition under tilt</div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 2 · Dynamics</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Real-Time Multitasking (FreeRTOS)</div></div></div>
+    <div class="body">
+      <p class="lead" style="font-size:14px">Solving bottleneck #2: activate both asymmetric cores of the ESP32-S3.</p>
+      <div class="grid2">
+        <div class="card"><div class="lab" style="color:var(--title)">CORE 1 · ATTITUDE LOOP — 250 Hz (4 ms)</div>
+          <ul class="b" style="margin-top:6px"><li>Read the IMU MPU6050 &amp; run the Kalman filter.</li><li>Compute the angular-rate PID.</li><li>Mix signals &amp; output PWM directly to the 4 motors.</li></ul>
+        </div>
+        <div class="card"><div class="lab" style="color:var(--title)">CORE 0 · NAV LOOP — 100 Hz (10 ms)</div>
+          <ul class="b" style="margin-top:6px"><li>Receive RC commands over ELRS (UART).</li><li>Read ToF &amp; optical flow.</li><li>Run the Altitude/Position PID, feed set-points to Core 1.</li></ul>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 2 · Firmware</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">The Big Picture: Sensor Fusion</div></div></div>
+    <div class="body">
+      <div class="steps">
+        <div class="step"><div class="num">1</div><div class="t"><b>Geometric Projection:</b> the ToF beam reads slanted under tilt → multiply by $\cos(\text{Roll})\cdot\cos(\text{Pitch})$ to recover the true perpendicular height $Z_{true}$.</div></div>
+        <div class="step"><div class="num">2</div><div class="t"><b>Height Scaling:</b> multiply the optical-flow pixel displacement by the true altitude $Z_{true}$ to obtain velocity in m/s.</div></div>
+        <div class="step"><div class="num">3</div><div class="t"><b>Gyro Compensation:</b> subtract the virtual pixel motion caused by the drone's own rotation (from the gyroscope) to extract pure translational velocity.</div></div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 2 · Fusion</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Algorithm Flow: IMU &amp; Kalman Filter</div></div></div>
+    <div class="body">
+      <p class="lead" style="font-size:14px"><b>Task:</b> reject mechanical-vibration noise on the accelerometer to extract a clean tilt angle. The 2-axis Kalman filter continuously optimizes the error covariance matrix $P_k$.</p>
+      <div class="grid2" style="gap:16px">
+        <div>
+          <p class="tg" style="font-size:14px;margin-bottom:4px">Predict</p>
+          <div class="eq small">$$ \hat{x}_{k|k-1} = F\hat{x}_{k-1} + Bu_k $$</div>
+          <div class="eq small">$$ P_{k|k-1} = FP_{k-1}F^T + Q $$</div>
+        </div>
+        <div>
+          <p class="tg" style="font-size:14px;margin-bottom:4px">Update — gain $K_k$</p>
+          <div class="eq small">$$ K_k = P_{k|k-1}H^T(HP_{k|k-1}H^T + R)^{-1} $$</div>
+          <div class="eq small">$$ \hat{x}_k = \hat{x}_{k|k-1} + K_k(z_k - H\hat{x}_{k|k-1}) $$</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 2 · Kalman</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Altitude Sensor: ToF (VL53L1X)</div></div></div>
+    <div class="body">
+      <div class="col-img">
+        <div>
+          <p class="lead"><b>Geometric problem:</b> when the body tilts, the ToF laser measures along the hypotenuse → the apparent distance exceeds reality, so the system mistakes it for the drone climbing.</p>
+          <p class="lead"><b>Geometric Projection:</b> use the Kalman-filtered Euler angles to project the diagonal vector back onto the true perpendicular height.</p>
+          <div class="eq">$$ Z_{true} = D_{ToF\_Raw}\cdot\cos(\phi_{Roll})\cdot\cos(\theta_{Pitch}) $$</div>
+        </div>
+        <div class="ph"><div class="pi">📐</div>Figure: slanted ToF beam vs. true<br>height when the drone tilts by angle δ</div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 2 · ToF</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Optical-Flow Sensor (PMW3901) — XY Positioning</div></div></div>
+    <div class="body">
+      <p class="lead"><b>Task:</b> track XY drift for the Position-Hold PID loop. The sensor only counts pixel slip $\Delta px$; the real velocity depends on altitude and must be cleared of body-rotation noise.</p>
+      <div class="eq">$$ V_{x} = \left(\frac{\Delta px_x}{\Delta t}\right)\cdot\frac{Z_{true}}{k_{opt}} - (\omega_{gyro\_y}\cdot Z_{true}) $$</div>
+      <p class="lead" style="font-size:14px"><b>Height Scaling</b> uses $Z_{true}$ (from ToF) to convert pixels → m/s; <b>Gyro Compensation</b> subtracts the virtual velocity from body rotation. The resulting $V_x, V_y$ feed directly into the outer loop.</p>
+    </div>
+    <div class="foot"><span>Part 2 · Optical Flow</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Cascade Control Architecture (Cascade PI-D)</div></div></div>
+    <div class="body">
+      <p class="lead" style="font-size:14px">To fully damp the ground effect, the system uses two nested loops:</p>
+      <div class="grid2" style="gap:16px">
+        <div class="card"><div class="lab" style="color:var(--title)">OUTER LOOP (PI) — slow / accurate</div><p style="margin:8px 0">Drives position $Z, XY$ to the target → outputs a target velocity.</p><div class="eq small">$$ v_{target} = K_{p1}e_{pos} + K_{i1}\!\int e_{pos}\,dt $$</div></div>
+        <div class="card"><div class="lab" style="color:var(--title)">INNER LOOP (PD) — fast / strong</div><p style="margin:8px 0">Forces velocity to track $v_{target}$ at 250 Hz, rejecting gusts instantly.</p><div class="eq small">$$ u_{motor} = K_{p2}(v_{target}-v_{real}) - K_{d2}\dot{v}_{real} $$</div></div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 2 · Cascade PID</span></div>
+  </div>
+</section>
+
+<section class="slide divider-slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="dv-in">
+    <div class="dv-tick"></div>
+    <div class="dv-kicker">Part 3</div>
+    <h2 class="dv-title">Validation &amp; Results</h2>
+    <p class="dv-sub">Theory is done — now the proof that the system works, backed by experimental data.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Measurement Method: Wireless ESP-NOW Telemetry</div></div></div>
+    <div class="body">
+      <div class="col-img">
+        <div>
+          <p class="lead"><b>Measurement obstacle:</b> plugging a USB cable directly into the micro-drone adds pull/torque that corrupts the steady-state result.</p>
+          <p class="lead"><b>Solution:</b> a <b>connectionless ESP-NOW 2.4 GHz</b> link — stream telemetry arrays straight to a Ground Station on the PC and plot live with <b>Teleplot</b> at $\le 2$ ms latency.</p>
+          <p class="lead" style="font-size:13.5px;color:var(--sub)">Test conditions: indoor, calm air, hover at 30 cm; each metric is measured over multiple repeated runs to verify stability.</p>
+        </div>
+        <div class="ph"><div class="pi">📡</div>Diagram: Drone → ESP-NOW → USB<br>Ground Station → Teleplot</div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 3 · Method</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Experiment: Free-Flight Capability</div></div></div>
+    <div class="body">
+      <div class="ph" style="height:100%"><div class="pi" style="font-size:46px">▶️</div>LIVE HOVER DEMO VIDEO<br><span style="font-size:13px;font-weight:400">Insert an MP4 in Canva / PowerPoint — the drone auto-takes off, holds altitude and locks position, fully hands-free.</span></div>
+    </div>
+    <div class="foot"><span>Part 3 · Demo</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Result: Altitude Response (Altitude Hold)</div></div></div>
+    <div class="body">
+      <div class="stat">
+        <div class="bignum">±20<small>mm — max steady-state error</small></div>
+        <div class="txt">
+          <h3>Beats the &lt; 5 cm target</h3>
+          <p><b>Step-response plot:</b> the Cascade PI-D catches the set-point instantly (drop from <span class="hl">672 mm → 659 mm</span>) with <b>no overshoot</b>.</p>
+          <div class="ph" style="height:170px"><div class="pi">📈</div>Step-response plot: Target vs Actual</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 3 · Altitude result</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Result: Planar Trajectory (XY Hold)</div></div></div>
+    <div class="body">
+      <div class="stat">
+        <div class="bignum">±4.0<small>cm — max oscillation radius</small></div>
+        <div class="txt">
+          <h3>Stays inside the 10 cm limit</h3>
+          <p>Over a <b>30-second continuous</b> hands-free test, <span class="hl">100% of the trajectory</span> stays within the $\le$ 10 cm safety circle.</p>
+          <div class="ph" style="height:170px"><div class="pi">🎯</div>Top-down XY trajectory plot<br>+ 10 cm limit circle</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>Part 3 · Position result</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">System Evaluation Against Objectives</div></div></div>
+    <div class="body">
+      <table class="rt">
+        <thead><tr><th>Quantitative parameter</th><th>Target</th><th>Measured value</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><span class="metric">Altitude steady-state error (Z)</span></td><td>&lt; 5 cm</td><td>Max <b>±2.0 cm</b></td><td><span class="pass">✓ PASS</span></td></tr>
+          <tr><td><span class="metric">Planar position drift (XY)</span></td><td>&lt; 10 cm</td><td>Stable <b>±4.0 cm</b></td><td><span class="pass">✓ PASS</span></td></tr>
+          <tr><td><span class="metric">Balance recovery time</span></td><td>&lt; 5 s</td><td>&lt; <b>1.5 s</b></td><td><span class="pass">✓ PASS</span></td></tr>
+          <tr><td><span class="metric">Continuous hover time</span></td><td>5 – 7 min</td><td>≈ <b>5.5 min</b> (LiPo 720 mAh 1S)</td><td><span class="pass">✓ PASS</span></td></tr>
+          <tr><td><span class="metric">Component cost (BOM)</span></td><td>≤ $50</td><td>≈ <b>$42</b></td><td><span class="pass">✓ PASS</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="foot"><span>Part 3 · Summary</span></div>
+  </div>
+</section>
+
+<section class="slide divider-slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="dv-in">
+    <div class="dv-tick"></div>
+    <div class="dv-kicker">Part 4</div>
+    <h2 class="dv-title">Conclusion</h2>
+    <p class="dv-sub">Real operating limits, our contribution, and future work.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Limitations &amp; Operating Conditions</div></div></div>
+    <div class="body">
+      <p class="lead" style="font-size:14px">The main limitation comes from the low-cost <b>PMW3901</b> optical-flow sensor — which imposes strict requirements on surface and lighting:</p>
+      <div class="grid2" style="gap:16px">
+        <div class="card"><div class="lab" style="color:var(--faculty)">FLOOR SURFACE</div><p>Needs a <b>random, chaotic</b> texture. A regular repeating surface (periodic tile patterns, smooth floors) leaves the sensor unable to distinguish motion → position hold is lost. Workaround: print a noisy random pattern on floor paper.</p></div>
+        <div class="card"><div class="lab" style="color:var(--faculty)">LIGHTING</div><p>Avoid overly bright / glary environments. Reflective surfaces (glass) and outdoor sunlight disturb both optical flow and ToF. Room lights must not cast hard shadows — otherwise the drone cannot read the black/white contrast.</p></div>
+      </div>
+      <p class="lead" style="margin-top:14px;font-size:13.5px"><b>Scope:</b> indoor, calm air, controlled lighting &amp; surface · point hover only (no waypoints yet) · ~5.5 min per charge. <span class="tg">A deliberate trade-off to keep cost &lt; $50.</span></p>
+    </div>
+    <div class="foot"><span>Part 4 · Limitations</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">Conclusion: Contribution &amp; Future Work</div></div></div>
+    <div class="body">
+      <p class="lead"><b>Our contribution:</b> integrating <span class="tg">Geometric Projection for ToF</span> + <span class="tg">optical-flow fusion</span> (height scaling &amp; gyro compensation) running in real time on a <b>&lt; $50</b> MCU, with an asymmetric dual-core architecture — reaching ±2 cm altitude hold and ±4 cm position hold <b>without LiDAR or a vision computer</b>.</p>
+      <ul class="b" style="margin-top:8px">
+        <li>Fully solves the indoor 6-DOF problem in a GPS-denied, low-cost setting.</li>
+        <li>An open-source, stable platform — ready to host a block-programming interface.</li>
+      </ul>
+      <p class="lead" style="margin-top:14px"><b>Future work:</b> build a <span class="tg">Blockly/Scratch</span> API library for K-12 students, turning the drone into a STEM teaching tool.</p>
+    </div>
+    <div class="foot"><span>Part 4 · Conclusion</span></div>
+  </div>
+</section>
+
+<section class="slide divider-slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="dv-in">
+    <div class="dv-tick"></div>
+    <h2 class="dv-title">Thank You!</h2>
+    <p class="dv-sub">We welcome questions from the committee and the audience.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">[Backup] ToF Sensor Exception Handling</div></div></div>
+    <div class="body">
+      <p class="lead" style="font-size:14px"><b>Edge case:</b> when the drone slides hard and tilt exceeds $\ge 15^\circ$, the laser reflects off a wall/obstacle instead of the floor → a steep error spike.</p>
+      <div class="code"><span class="c">// Fail-safe: freeze the reading &amp; lock the integrator</span>
+<span class="k">if</span> ( |Roll| &ge; 15&deg; <span class="k">OR</span> |Pitch| &ge; 15&deg; ) {
+    Freeze_Filter(Z_true);     <span class="c">// freeze the measured value</span>
+    Lock_PID_Integral();       <span class="c">// anti-windup</span>
+}</div>
+      <p class="lead" style="margin-top:14px;font-size:14px"><b>Additionally:</b> if tilt exceeds $40^\circ$, the firmware automatically triggers an <span class="hl">emergency cut-off</span> to protect the motors.</p>
+    </div>
+    <div class="foot"><span>Backup · Fail-safe</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="blob blob-tr"></div><div class="blob blob-bl"></div>
+  <div class="corners">
+    <div class="clogo win">WINDIFY<span>Company</span></div>
+    <div class="clogo bk">DUT<br>UD</div>
+    <div class="fastlock"><div class="clogo fast">FAST</div><div class="facname">FACULTY OF ADVANCED SCIENCE AND TECHNOLOGY</div></div>
+  </div>
+  <div class="in">
+    <div class="head"><div class="bar"><div class="stitle">[Backup] References</div></div></div>
+    <div class="body">
+      <ul class="b" style="gap:9px;font-size:14px">
+        <li>[5] <i>Dynamics of Quadrotor</i>, Vol. 19, No. 3, 2012.</li>
+        <li>[6] R. E. Kalman, "A New Approach to Linear Filtering and Prediction Problems", 1960.</li>
+        <li>[7] <i>Feedback Control of Dynamic Systems</i>, Pearson.</li>
+        <li>[11] VL53L1X Datasheet — STMicroelectronics.</li>
+        <li>[12] PMW3901 Datasheet — PixArt Imaging.</li>
+        <li style="color:var(--sub)">(Complete the full list per the faculty's citation format.)</li>
+      </ul>
+    </div>
+    <div class="foot"><span>Backup · References</span></div>
+  </div>
+</section>
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+<script>
+Reveal.initialize({
+  width:1280, height:720, margin:0.04,
+  controls:true, progress:true, slideNumber:'c/t', hash:true,
+  center:false, transition:'fade'
+});
+function mj(){ if(window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(); }
+Reveal.on('ready', mj);
+Reveal.on('slidechanged', mj);
+</script>
+</body>
+</html>
